@@ -44,6 +44,7 @@ class DFU_Reboot:
         return deviceList
 
     def reboot(self, devices):
+        history = []
         for dev in devices:
             interface = 0
             status = False
@@ -51,9 +52,15 @@ class DFU_Reboot:
                 try:
                     dev["dev"].ctrl_transfer(bmRequestType=0x21, bRequest=0, wValue=0, wIndex=interface)
                     status = True   # Correct Interface number found
+                    history.append(dev['ser'])
+                    print(f"Sent DFU Command to: {dev['ser']}")
                 except Exception:
                     interface += 1
-                
+
+        serial = [i['ser'] for i in devices]
+        dif = set(serial) - set(history)
+        if(dif):
+            return [f"Could not set devices into DFU mode: {dif}"]     
         return False
 
 

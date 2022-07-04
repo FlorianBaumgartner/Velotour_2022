@@ -2,6 +2,14 @@
 #include "utils.h"
 #include <TFT_eSPI.h>
 
+#include "configuration.h"
+#include <painlessMesh.h>
+
+#define   MESH_PREFIX     "ESPMESH"
+#define   MESH_PASSWORD   "password"
+#define   MESH_PORT       5555
+
+#define USER_BTN          0
 #define LED               33
 #define BLINK_INTERVAL    500
 
@@ -9,9 +17,47 @@ Utils utils;
 TFT_eSPI tft = TFT_eSPI();
 TFT_eSprite framebuf = TFT_eSprite(&tft);
 
+
+Scheduler userScheduler; // to control your personal task
+painlessMesh  mesh;
+
+void sendMessage(); // Prototype so PlatformIO doesn't complain
+Task taskSendMessage(TASK_SECOND * 1 , TASK_FOREVER, &sendMessage);
+
+void sendMessage()
+{
+  String msg = "Hi from node ";
+  msg += mesh.getNodeId();
+  msg += " (Serial Number: " + String(utils.getSerialNumber()) + ")";
+  mesh.sendBroadcast(msg);
+  taskSendMessage.setInterval(TASK_SECOND * 1);
+}
+
+// Needed for painless library
+void receivedCallback( uint32_t from, String &msg )
+{
+  Serial.printf("startHere: Received from %u msg=%s\n", from, msg.c_str());
+}
+
+void newConnectionCallback(uint32_t nodeId)
+{
+    Serial.printf("--> startHere: New Connection, nodeId = %u\n", nodeId);
+}
+
+void changedConnectionCallback()
+{
+  Serial.printf("Changed connections\n");
+}
+
+void nodeTimeAdjustedCallback(int32_t offset)
+{
+    Serial.printf("Adjusted time %u. Offset = %d\n", mesh.getNodeTime(),offset);
+}
+
 void setup()
 {
   pinMode(LED, OUTPUT);
+  pinMode(USER_BTN, INPUT_PULLUP);
   utils.begin("TEST");
 
   tft.init();
@@ -19,60 +65,47 @@ void setup()
   tft.fillScreen(TFT_BLACK);
   framebuf.createSprite(TFT_WIDTH, TFT_HEIGHT);
   framebuf.fillSprite(TFT_BLACK);
+  framebuf.pushSprite(0, 0);
   digitalWrite(LED, 1);  // Backlight on
 
-  // (cursor will move to next line automatically during printing with 'tft.println'
-  //  or stay on the line is there is room for the text with tft.print)
-  framebuf.setCursor(0, 0, 2);  // Set "cursor" at top left corner of display (0,0) and select font 2
-  // Set the font colour to be white with a black background, set text size multiplier to 1
-  framebuf.setTextColor(TFT_WHITE,TFT_BLACK);  tft.setTextSize(1);
-  // We can now plot text on screen using the "print" class
-  framebuf.println("Hello World!");
-  
-  // Set the font colour to be yellow with no background, set to font 7
-  framebuf.setTextColor(TFT_YELLOW); tft.setTextFont(2);
-  framebuf.println(1234.56);
-  
-  // Set the font colour to be red with black background, set to font 4
-  framebuf.setTextColor(TFT_RED,TFT_BLACK);    tft.setTextFont(4);
-  framebuf.println((long)3735928559, HEX); // Should print DEADBEEF
+  mesh.setDebugMsgTypes( ERROR | MESH_STATUS | CONNECTION | SYNC | COMMUNICATION | GENERAL | MSG_TYPES | REMOTE ); // all types on
+  //mesh.setDebugMsgTypes( ERROR | STARTUP);  // set before init() so that you can see startup messages
 
-  // Set the font colour to be green with black background, set to font 2
-  framebuf.setTextColor(TFT_GREEN,TFT_BLACK);
-  framebuf.setTextFont(2);
-  framebuf.println("Groop");
+  mesh.init(MESH_PREFIX, MESH_PASSWORD, &userScheduler, MESH_PORT, utils.getSerialNumber()[0] == '0'? WIFI_AP : WIFI_STA);
+  mesh.onReceive(&receivedCallback);
+  mesh.onNewConnection(&newConnectionCallback);
+  mesh.onChangedConnections(&changedConnectionCallback);
+  mesh.onNodeTimeAdjusted(&nodeTimeAdjustedCallback);
 
-  // Test some print formatting functions
-  float fnumber = 123.45;
-  framebuf.setTextColor(TFT_BLUE);    tft.setTextFont(2);
-  framebuf.print("Float = "); tft.println(fnumber);           // Print floating point number
-  framebuf.print("Binary = "); tft.println((int)fnumber, BIN); // Print as integer value in binary
-  framebuf.print("Hexadecimal = "); tft.println((int)fnumber, HEX); // Print as integer number in Hexadecimal
-
-  framebuf.pushSprite(0, 0);
+  userScheduler.addTask(taskSendMessage);
+  taskSendMessage.enable();
 }
 
 void loop()
 {
-  static float fps = 0.0;
-  static int t = 0, f = 0;
-  if(millis() - t > 100)
+  static bool btn = true;
+  if(btn && !digitalRead(USER_BTN))
+  {
+    Serial.println("Start Mesh");
+
+  }
+  btn = digitalRead(USER_BTN);
+
+  static int t = 0;
+  if(millis() - t > 1000)
   {
     t = millis();
-    Serial.printf("FPS: %.1f\n", fps);
+    Serial.printf("Time: %d\n", millis());
+
+    framebuf.fillSprite(TFT_BLACK);
+    framebuf.setCursor(0, 0, 2);
+    framebuf.setTextColor(TFT_WHITE);
+    framebuf.printf("Serial Number: %s\n", utils.getSerialNumber());
+    framebuf.printf("Time: %d\n", millis());
+    framebuf.pushSprite(0, 0);
   }
 
-  fps = 1000.0 / (millis() - f);
-  f = millis();
-
-  framebuf.fillSprite(TFT_BLACK);
-  framebuf.setCursor(0, 0, 2);
-  framebuf.setTextColor(TFT_WHITE);
-  framebuf.printf("FPS: %.1f", fps);
-
-  
-  framebuf.pushSprite(0, 0);
-
   //digitalWrite(LED, (millis() / BLINK_INTERVAL) & 1);
-  //delay(1);
+  mesh.update();
+  delay(1);
 }

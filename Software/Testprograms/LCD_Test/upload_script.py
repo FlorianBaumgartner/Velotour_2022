@@ -2,6 +2,7 @@ Import("env")
 
 import time
 import glob
+import shutil
 from uf2_loader import UF2Loader
 from dfu_reboot import DFU_Reboot
 
@@ -36,7 +37,8 @@ def on_upload(source, target, env):
     #print(firmware_path)
     #print(firmware_path.rsplit('.', 1)[0] + ".UF2")
 
-    loader.save(firmware_path, firmware_path.rsplit('.', 1)[0] + ".UF2")
+    firmwareFilePath = firmware_path.rsplit('.', 1)[0] + ".UF2"
+    loader.save(firmware_path, firmwareFilePath)
 
     availableDrives = loader.get_drives()
     if not availableDrives:
@@ -48,25 +50,36 @@ def on_upload(source, target, env):
             if not devicesFiltered:
                 return [f"No device with matching serial number {[usb_serial]} found, available devices: {[d['ser'] for d in devices]}"]  # Bug in python (scons) when string has more than 000 in row, then not red output?
             devices = devicesFiltered
-        print(f"{len(devices)} Device{'s' if len(devices) > 1 else ''} found, start download:", end = '')
+        print(f"{len(devices)} Device{'s' if len(devices) > 1 else ''} found: {[d['ser'] for d in devices]}")
         status = dfu.reboot(devices)
         if status:
             print()
             return [status]
     else:
+        devices = loader.get_drives()
         print("There is already a UF2-Drive available, skip entering bootloader (serial number cannot be compared)", end = '')
 
-    TIMEOUT = 15        # [s]
+    TIMEOUT = 25        # [s]
+    uploadCount = 0
     t = time.time()
+    print("Start Download:", end = '')
     while(time.time() - t < TIMEOUT):
-        status = loader.download(firmware_path)
-        if status is None:
-            print("Download was successful!")
+        drives = loader.get_drives()
+        if(drives):
+            print("\nFlashing %s (%s)" % (drives[0], loader.board_id(drives[0])), end = "")
+            shutil.copyfile(firmwareFilePath, drives[0] + "/NEW.UF2")
+            print(" -> OK", end = "")
+            uploadCount += 1
+        if uploadCount == len(devices):
+            print("\nDownload was successful!")
             return False
-        print(".", end = '')
+        if(uploadCount == 0):
+            print(".", end = '')
         time.sleep(0.3)   
     print()
-    return [status]         # Error: Timout
+    if not drives:
+        return ["Timeout: No drive to deploy found"]
+    return [f"Timeout: Only {uploadCount} of {len(devices)} has been programmed"]         # Error: Timout
     
     # return "Test"         # Warning
     # return False          # OK
