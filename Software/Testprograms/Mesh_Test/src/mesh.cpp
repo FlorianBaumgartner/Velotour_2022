@@ -1,4 +1,5 @@
 #include "mesh.h"
+#include "utils.h"                          // Use for USB Serial
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include <ArduinoJson.h>
