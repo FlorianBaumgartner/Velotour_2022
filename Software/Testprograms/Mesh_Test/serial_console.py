@@ -1,9 +1,25 @@
 import os
 import sys
 import time
-import serial
-import serial.tools.list_ports
 import threading
+try:
+    import serial
+    import serial.tools.list_ports
+except ModuleNotFoundError:
+    print("USB Modules not found, try to install them...")
+    import pip
+    def install(package):
+        if hasattr(pip, 'main'):
+            pip.main(['install', package])
+        else:
+            pip._internal.main(['install', package])
+
+    install("serial")
+    install("pyserial")
+    import serial
+    import serial.tools.list_ports
+    print("USB Modules successfully installed and imported!")
+
 
 class Port:
     def __init__(self, port, vid, pid, ser):
@@ -29,6 +45,8 @@ def getPorts():
     return ports
 
 ports = getPorts()
+for p in ports:
+    print(p)
 
 print(f"Process ID: {os.getpid()}")
 
@@ -66,7 +84,10 @@ else:
                         self._data =data_json.decode('UTF-8');
                         if(not self._data):
                             break
-                        print(self._data, end="")
+                        try:
+                            print(self._data, end="")
+                        except:
+                            pass
                     except serial.SerialException:
                         ser.close()
                         break

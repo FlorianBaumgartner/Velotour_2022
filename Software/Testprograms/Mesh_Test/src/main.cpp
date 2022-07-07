@@ -56,7 +56,7 @@ void loop()
   {
     update = false;
     t = millis();
-    Serial.printf("Time: %d\n", millis());
+    //Serial.printf("Time: %d\n", millis());
 
     framebuf.fillSprite(TFT_BLACK);
     framebuf.setCursor(0, 0, 2);

@@ -1,7 +1,7 @@
 {
 	"usb_serial":"0",
-	"usb_vid":"0x303A",
-	"usb_pid":"0x0002",
+	"usb_vid":"0x239A",
+	"usb_pid":"0x80AB",
 	"ssid":"WLAN",
 	"password":"zyxel2010"
 }

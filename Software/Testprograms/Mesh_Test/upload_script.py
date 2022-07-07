@@ -61,7 +61,7 @@ def on_upload(source, target, env):
             return [status]
     else:
         devices = loader.get_drives()
-        print("There is already a UF2-Drive available, skip entering bootloader (serial number cannot be compared)", end = '')
+        print("There is already a UF2-Drive available, skip entering bootloader (serial number cannot be compared)")
 
     TIMEOUT = 25        # [s]
     uploadCount = 0
