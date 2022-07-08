@@ -152,6 +152,7 @@ static void task(void* pvParameter)
     }
     vTaskDelayUntil(&taskLastTick, taskFreq);
   }
+  vTaskDelete(NULL);
 }
 
 bool Utils::isConnected(void)

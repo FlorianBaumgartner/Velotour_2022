@@ -4,19 +4,12 @@
 #include "freertos/task.h"
 #include <ArduinoJson.h>
 
-#define TASK_MESH_FREQ          1           // Frequency [Hz]
-
-volatile static bool demoLed;
-static Message* messagePtr = nullptr;
-static int32_t* nodeTimeOffsetPtr = nullptr;
-static int8_t* deviceIdPtr = nullptr;
+static Mesh* meshPtr = nullptr;
 
 
 Mesh::Mesh()
 {
-  messagePtr = message;
-  nodeTimeOffsetPtr = nodeTimeOffset;
-  deviceIdPtr = &deviceId;
+  meshPtr = this;
 }
 
 void Mesh::begin(int id)
@@ -24,7 +17,15 @@ void Mesh::begin(int id)
   deviceId = id;
   randomReference = esp_random() % 0xFFFF;  // Use True RNG to generate unique lifecycle reference IDs
 
+  if(initialized)
+  {
+    end();
+    initialized = false;
+    delay(1500 / TASK_MESH_FREQ);           // Make shure, that the update task is not running anymore
+  }
+  initialized = true;
   WiFi.mode(WIFI_STA);                      // Set device in STA mode to begin with
+  WiFi.setTxPower(WIFI_POWER_19_5dBm);      // Set Max RF-Power
   WiFi.disconnect();
   if (esp_now_init() == ESP_OK)             // Startup ESP Now
   {
@@ -35,66 +36,56 @@ void Mesh::begin(int id)
   else
   {
     Serial.println("ESPNow Init Failed");
-    delay(3000);
-    ESP.restart();
+    restart();
   }
 
   xTaskCreate(update, "task_mesh", 2048, this, 1, NULL);
 }
 
-void Mesh::broadcast(const String &message)
+void Mesh::end(void)
 {
-  uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-  esp_now_peer_info_t peerInfo = {};
-  memcpy(&peerInfo.peer_addr, broadcastAddress, 6);
-  if (!esp_now_is_peer_exist(broadcastAddress))
+  if(initialized)
   {
-    esp_now_add_peer(&peerInfo);
+    esp_now_deinit();
   }
-  esp_err_t result = esp_now_send(broadcastAddress, (const uint8_t *)message.c_str(), message.length());
-  if (result == ESP_OK)
+  initialized = false;
+}
+
+void Mesh::restart(bool immediate)
+{
+  end();
+  if(!immediate)
   {
-    Serial.println("Broadcast message success");
+    delay(RESTART_DELAY);
   }
-  else if (result == ESP_ERR_ESPNOW_NOT_INIT)
+  ESP.restart();
+}
+
+void Mesh::getNodeIds(int8_t* ids, uint8_t maxLen)
+{
+  uint8_t count = 0;
+  for(int i = 0; i < MAX_NODES_NUM; i++)
   {
-    Serial.println("ESPNOW not Init.");
-  }
-  else if (result == ESP_ERR_ESPNOW_ARG)
-  {
-    Serial.println("Invalid Argument");
-  }
-  else if (result == ESP_ERR_ESPNOW_INTERNAL)
-  {
-    Serial.println("Internal Error");
-  }
-  else if (result == ESP_ERR_ESPNOW_NO_MEM)
-  {
-    Serial.println("ESP_ERR_ESPNOW_NO_MEM");
-  }
-  else if (result == ESP_ERR_ESPNOW_NOT_FOUND)
-  {
-    Serial.println("Peer not found.");
-  }
-  else
-  {
-    Serial.println("Unknown error");
+    if(activeNodes[i] && count < maxLen)
+    {
+      ids[count++] = message[i].id;
+    }
   }
 }
 
 void Mesh::update(void *pvParameter)
 {
-  while(true)
+  Mesh* ref = (Mesh*)pvParameter;
+  while(ref->initialized)
   {
-    Mesh* ref = (Mesh*)pvParameter;
     TickType_t task_last_tick = xTaskGetTickCount();
 
     if(ref->deviceId < MAX_NODES_NUM)
     {
       ref->message[ref->deviceId].id = ref->deviceId;
       ref->message[ref->deviceId].timestamp = millis();
-      ref->message[ref->deviceId].payload = 0x12345678;     // TODO: Change payload
       ref->message[ref->deviceId].lifetimeRef = ref->randomReference;
+      ref->message[ref->deviceId].origin = true;
       ref->nodeTimeOffset[ref->deviceId] = 0;
     }
     else
@@ -106,15 +97,19 @@ void Mesh::update(void *pvParameter)
     int messagesToSendCount = 0; 
     for(int i = 0; i < MAX_NODES_NUM; i++)
     {
-      if(ref->message[i].id != -1)    // Check if node ID aleady exists in local buffer
+      ref->activeNodes[i] = false;              // Default is every node marked as inactive
+      if(ref->message[i].id != -1)              // Check if node ID already exists in local buffer
       {
         int32_t timeDiff = millis() - (ref->message[i].timestamp + ref->nodeTimeOffset[i]);
         if(timeDiff < NETWORK_TIMEOUT)
         {
-          memcpy(&messagesToSend[messagesToSendCount++], &ref->message[i], sizeof(Message));
+          ref->activeNodes[i] = true;           // Node is active since data has recently been received
+          memcpy(&messagesToSend[messagesToSendCount], &ref->message[i], sizeof(Message));
+          messagesToSend[messagesToSendCount].origin = (i == ref->deviceId);  // Clear origin flag for relayed messages
+          messagesToSendCount++;
         }
         Serial.printf("System Time: %d, Node %d (LifeTimeRef: %04X): ", millis(), ref->message[i].id, ref->message[i].lifetimeRef);
-        if(i == ref->deviceId)        // Check if own node id is present
+        if(i == ref->deviceId)                  // Check if own node id is present
         {
           Serial.printf("Own Node\n");
         }
@@ -123,81 +118,97 @@ void Mesh::update(void *pvParameter)
           Serial.printf("Node Timestamp = %d -> nodeTimeOffset = %d -> timeDiff = %d\n", ref->message[i].timestamp, ref->nodeTimeOffset[i], timeDiff);
         }   
       }
+      ref->origin[i] = ref->message[i].origin;  // Save origin state for IPA access
+      if(ref->activeNodes[i])                   // Only clear flag if data of specific node has been received
+      {
+        ref->message[i].origin = false;         // Clear flag, the collect all messages over one periode and watch for origin messages
+      }
     }
-    if(messagesToSendCount > 0)
+    ref->nodeCount = messagesToSendCount;
+
+    if(ref->nodeCount > 0)
     {
       Serial.print("Send node IDs: [");
-      for(int i = 0; i < messagesToSendCount; i++)
+      for(int i = 0; i < ref->nodeCount; i++)
       {
         Serial.printf("%d", messagesToSend[i].id);
-        if(i < messagesToSendCount - 1) Serial.print(", ");
+        if(i < ref->nodeCount - 1) Serial.print(", ");
       }
       Serial.println("]");
 
-      uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-      esp_now_peer_info_t peerInfo = {};
+      static uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+      static esp_now_peer_info_t peerInfo = {};
       memcpy(&peerInfo.peer_addr, broadcastAddress, 6);
       if (!esp_now_is_peer_exist(broadcastAddress))
       {
         esp_now_add_peer(&peerInfo);
       }
-      esp_err_t result = esp_now_send(broadcastAddress, (const uint8_t*)messagesToSend, messagesToSendCount * sizeof(Message));
-      //Serial.println(result == ESP_OK? "Messages sent successfully": "Error occured while sending Messages");
+      esp_now_send(broadcastAddress, (const uint8_t*)messagesToSend, ref->nodeCount * sizeof(Message));
     }
     else
     {
       Serial.println("No node data to send (not even own node data - this should no happen)");
     }
 
-    //ref->nodeTimeOffset[1] = nodeTimeOffsetPtr[1];
-    //Serial.printf("Addr should be %08X, but is %08X\n", ref->nodeTimeOffset[1], nodeTimeOffsetPtr[1]);
-
     vTaskDelayUntil(&task_last_tick, (const TickType_t) 1000 / TASK_MESH_FREQ);
   }
-}
-
-void Mesh::setLedState(bool state)
-{
-  demoLed = state;
-}
-
-bool Mesh::getLedState(void)
-{
-  return demoLed;
+  vTaskDelete(NULL);
 }
 
 void Mesh::sentCallback(const uint8_t *macAddr, esp_now_send_status_t status)
 {
   if(status != ESP_NOW_SEND_SUCCESS)
   {
-    Serial.println("Sending data failed!");
+    Serial.println("Could not send data (ESP-NOW Error) -> Reset");
+    meshPtr->restart();
   }
 }
 
 void Mesh::receiveCallback(const uint8_t *macAddr, const uint8_t *data, int dataLen)
 {
+  static int noReplyCount = 0;
   int msgLen = min(ESP_NOW_MAX_DATA_LEN, dataLen);
   uint8_t buffer[ESP_NOW_MAX_DATA_LEN];
   memcpy(buffer, data, msgLen);
   int nodeCount = msgLen / sizeof(Message);
+  bool receivedOwnId = false;
   Serial.printf("Received Node Count: %d\n", nodeCount);
   for(int i = 0; i < nodeCount; i++)
   {
     Message* msg = (Message*) &buffer[i * sizeof(Message)];
-    if(msg->id != *deviceIdPtr)     // Look only for other nodes (exlude repeated personal data)
+    if(msg->id != meshPtr->deviceId)     // Look only for other nodes (exclude relayed personal data)
     {
       if(msg->id < MAX_NODES_NUM)
       {
-        if(msg->timestamp > messagePtr[msg->id].timestamp || msg->lifetimeRef != messagePtr[msg->id].lifetimeRef)   // Check if the received message is fresh or if its already buffered
+        if(msg->timestamp > meshPtr->message[msg->id].timestamp || msg->lifetimeRef != meshPtr->message[msg->id].lifetimeRef)   // Check if the received message is fresh or if its already buffered
         {
-          nodeTimeOffsetPtr[msg->id] = millis() - msg->timestamp;
-          memcpy(&messagePtr[msg->id], msg, sizeof(Message));
+          bool origin = meshPtr->message[msg->id].origin;
+          meshPtr->nodeTimeOffset[msg->id] = millis() - msg->timestamp;
+          memcpy(&meshPtr->message[msg->id], msg, sizeof(Message));
+          meshPtr->message[msg->id].origin |= origin;     // Ignore relayed messages if message from source has been received
         }
       }
       else
       {
         Serial.printf("Received Node ID (%d) is out of index (Max. %d)\n", msg->id, MAX_NODES_NUM);
       }
+    }
+    else
+    {
+      receivedOwnId = true;
+    }
+  }
+  if(receivedOwnId || nodeCount == 0)   // Only panic if other node data has received, but not own data has been relayed back
+  {
+    noReplyCount = 0;
+  }
+  else
+  {
+    noReplyCount++;
+    if(noReplyCount > NO_REPLY_THRESHOLD)
+    {
+      Serial.println("Didn't receive own node data (is this node even transmitting?) -> Reset");
+      meshPtr->restart();
     }
   }
 }

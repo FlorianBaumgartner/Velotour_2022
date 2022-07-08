@@ -23,7 +23,7 @@ void setup()
   tft.init();
   tft.setRotation(1);
   tft.fillScreen(TFT_BLACK);
-  framebuf.createSprite(TFT_WIDTH, TFT_HEIGHT);
+  framebuf.createSprite(TFT_HEIGHT, TFT_WIDTH);
   framebuf.fillSprite(TFT_BLACK);
   framebuf.pushSprite(0, 0);
   digitalWrite(BACKLIGHT, 1);  // Backlight on
@@ -33,37 +33,35 @@ void setup()
 
 void loop()
 {
-  bool update = false;
-  static bool ledOld = false;
-  static bool btn = true;
-  if(btn && !digitalRead(USER_BTN))
+  static bool update = true;
+  static uint8_t nodeCount = 0;
+  mesh.setPayload(!digitalRead(USER_BTN));
+  if(mesh.getNodeCount() != nodeCount)
   {
-    Serial.println("Send Mesage");
-    mesh.setLedState(!mesh.getLedState());
-    mesh.broadcast(mesh.getLedState()? "on":"off");
-  }
-  btn = digitalRead(USER_BTN);
-
-  if(ledOld != mesh.getLedState())
-  {
-    ledOld = mesh.getLedState();
-    digitalWrite(LED, ledOld);
+    nodeCount = mesh.getNodeCount();
     update = true;
   }
   
   static int t = 0;
   if(millis() - t > 1000 || update)
   {
-    update = false;
     t = millis();
-    //Serial.printf("Time: %d\n", millis());
+    update = false;
 
     framebuf.fillSprite(TFT_BLACK);
     framebuf.setCursor(0, 0, 2);
     framebuf.setTextColor(TFT_WHITE);
-    framebuf.printf("Serial Number: %s\n", utils.getSerialNumber());
-    framebuf.printf("Time: %d\n", millis());
-    framebuf.printf("LED: %d\n", mesh.getLedState());
+    framebuf.printf("Serial Number: %s    Time: %d\n", utils.getSerialNumber(), millis());
+    
+    int8_t ids[MAX_NODES_NUM];
+    mesh.getNodeIds(ids);
+    for(int i = 0; i < mesh.getNodeCount(); i++)
+    {
+      int y = 20 + i * 15;
+      framebuf.setCursor(0, y, 2);
+      framebuf.printf("Node %d = %d (%s)", ids[i], mesh.getNodePayload(ids[i]), mesh.getNodeOrigin(ids[i])? "Origin" : "Relayed");
+      framebuf.fillRect(150, y + 1, 50, 13, mesh.getNodePayload(ids[i]) == 1? TFT_GREEN : TFT_BLACK);
+    }
     framebuf.pushSprite(0, 0);
   }
 
