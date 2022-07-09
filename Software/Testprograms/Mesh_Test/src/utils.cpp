@@ -17,6 +17,7 @@
  */
 
 #include "utils.h"
+#include "Console.h"
 #include "SPI.h"
 #include "Adafruit_SPIFlash.h"
 #include "Adafruit_TinyUSB.h"
@@ -27,10 +28,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#define TASK_UTILS_FREQ       10            // [Hz]
-#define MSC_STARTUP_DELAY     3000          // [ms]
-#define CONFIG_FILE_NAME      "system.json"
-
 static void task(void* pvParameter);
 static int32_t msc_read_cb(uint32_t lba, void* buffer, uint32_t bufsize);
 static int32_t msc_write_cb(uint32_t lba, uint8_t* buffer, uint32_t bufsize);
@@ -38,7 +35,6 @@ static void msc_flush_cb(void);
 static volatile bool updated = false;
 static volatile bool connected = false;
 
-USBCDC USBSerial;
 Adafruit_USBD_MSC usb_msc;
 Adafruit_FlashTransport_ESP32 flashTransport;
 Adafruit_SPIFlash flash(&flashTransport);
@@ -83,19 +79,16 @@ bool Utils::begin(const char* labelName, bool forceFormat)
     }
     ssid = systemParser.getSsid();
     password = systemParser.getPassword();
-    Serial.println("[UTILS] System config loading was successful.");
+    console.println("[UTILS] System config loading was successful.");
   }
   else
   {
-    Serial.println("[UTILS] System config loading failed.");
+    console.println("[UTILS] System config loading failed.");
   }
 
   USB.VID(vid);
   USB.PID(pid);
   USB.serialNumber(serial);
-
-  Serial.enableReboot(true);
-  Serial.begin();
   USB.enableDFU();
   USB.productName(USB_PRODUCT);
   USB.manufacturerName(USB_MANUFACTURER);
@@ -106,53 +99,14 @@ bool Utils::begin(const char* labelName, bool forceFormat)
   usb_msc.setCapacity(flash.size() / 512, 512);    // Set disk size, block size should be 512 regardless of spi flash page size
   usb_msc.begin();
 
-  xTaskCreate(task, "task_utils", 2048, NULL, 1, NULL);
+  xTimerPendFunctionCall(startMsc, this, 0, (const TickType_t) MSC_STARTUP_DELAY);
   return true;
 }
 
-static void task(void* pvParameter)
+void Utils::startMsc(void *pvParameter1, uint32_t ulParameter2)
 {
-  const TickType_t taskFreq = 1000 / TASK_UTILS_FREQ;
-  TickType_t taskLastTick = xTaskGetTickCount();
-  TickType_t taskStartTime = taskLastTick;
-  TickType_t serialStartupMessage = 0;
-  bool mscStarted = false;
-  bool serialState = false;
-  while(true)
-  {
-    if(Serial != serialState)
-    {
-      serialState = Serial;
-      if(serialState)
-      {
-        serialStartupMessage = xTaskGetTickCount() + 1000;
-      }
-      else
-      {
-        connected = false;
-      }
-    }
-    if((xTaskGetTickCount() > serialStartupMessage) && serialState && !connected)
-    {
-      Serial.printf(CLEAR_TERMINAL);
-      Serial.printf("\033[0;32;49m");
-      Serial.println("****************************************************");
-      Serial.println("*                  ESP32-S2 Utility                *");
-      Serial.println("*             2022, Florian Baumgartner            *");
-      Serial.println("****************************************************");
-      Serial.printf("\033[0;39;49m");
-      Serial.println();
-      delay(10);
-      connected = true;
-    }
-    if((xTaskGetTickCount() - taskStartTime > MSC_STARTUP_DELAY) && !mscStarted)
-    {
-      usb_msc.setUnitReady(true);  // MSC is ready for read/write
-      mscStarted = true;
-    }
-    vTaskDelayUntil(&taskLastTick, taskFreq);
-  }
-  vTaskDelete(NULL);
+  usb_msc.setUnitReady(true);                 // MSC is ready for read/write
+  console.enable(true);
 }
 
 bool Utils::isConnected(void)
@@ -172,51 +126,51 @@ bool Utils::format(const char* labelName)
   static FATFS elmchamFatfs;
   static uint8_t workbuf[4096];  // Working buffer for f_fdisk function.
 
-  Serial.println("[UTILS] Partitioning flash with 1 primary partition...");
+  console.println("[UTILS] Partitioning flash with 1 primary partition...");
   static DWORD plist[] = {100, 0, 0, 0};      // 1 primary partition with 100% of space.
   static uint8_t buf[512] = {0};              // Working buffer for f_fdisk function.
   static FRESULT r = f_fdisk(0, plist, buf);  // Partition the flash with 1 partition that takes the entire space.
   if(r != FR_OK)
   {
-    Serial.print("[UTILS] Error, f_fdisk failed with error code: ");
-    Serial.println(r, DEC);
+    console.print("[UTILS] Error, f_fdisk failed with error code: ");
+    console.println(r, DEC);
     return 0;
   }
-  Serial.println("[UTILS] Partitioned flash!");
-  Serial.println("[UTILS] Creating and formatting FAT filesystem (this takes ~60 seconds)...");
+  console.println("[UTILS] Partitioned flash!");
+  console.println("[UTILS] Creating and formatting FAT filesystem (this takes ~60 seconds)...");
   r = f_mkfs("", FM_FAT | FM_SFD, 0, workbuf, sizeof(workbuf));  // Make filesystem.
   if(r != FR_OK)
   {
-    Serial.print("[UTILS] Error, f_mkfs failed with error code: ");
-    Serial.println(r, DEC);
+    console.print("[UTILS] Error, f_mkfs failed with error code: ");
+    console.println(r, DEC);
     return 0;
   }
 
   r = f_mount(&elmchamFatfs, "0:", 1);  // mount to set disk label
   if (r != FR_OK)
   {
-    Serial.print("[UTILS] Error, f_mount failed with error code: ");
-    Serial.println(r, DEC);
+    console.print("[UTILS] Error, f_mount failed with error code: ");
+    console.println(r, DEC);
     return 0;
   }
-  Serial.print("[UTILS] Setting disk label to: ");
-  Serial.println(labelName);
+  console.print("[UTILS] Setting disk label to: ");
+  console.println(labelName);
   r = f_setlabel(labelName);  // Setting label
   if (r != FR_OK)
   {
-    Serial.print("[UTILS] Error, f_setlabel failed with error code: ");
-    Serial.println(r, DEC);
+    console.print("[UTILS] Error, f_setlabel failed with error code: ");
+    console.println(r, DEC);
     return 0;
   }
   f_unmount("0:");     // unmount
   flash.syncBlocks();  // sync to make sure all data is written to flash
-  Serial.println("[UTILS] Formatted flash!");
+  console.println("[UTILS] Formatted flash!");
   if (!fatfs.begin(&flash))  // Check new filesystem
   {
-    Serial.println("[UTILS] Error, failed to mount newly formatted filesystem!");
+    console.println("[UTILS] Error, failed to mount newly formatted filesystem!");
     return 0;
   }
-  Serial.println("[UTILS] Flash chip successfully formatted with new empty filesystem!");
+  console.println("[UTILS] Flash chip successfully formatted with new empty filesystem!");
   yield();
   return 1;
 }

@@ -17,6 +17,7 @@
  */
 
 #include "SystemParser.h"
+#include "console.h"
 #include "utils.h"
 #include "USB.h"
 
@@ -33,15 +34,17 @@ bool SystemParser::loadFile(const char* path) {
   filePath = path;
   File file = fatfs.open(filePath);
 
-  if (!file) {
-    Serial.println("open file failed");
+  if(!file)
+  {
+    console.println("open file failed");
     return false;
   }
 
   DeserializationError error = deserializeJson(doc, file);
-  if (error) {
+  if(error)
+  {
     file.close();
-    Serial.printf("Failed to read file, using default configuration: %d\n", error);
+    console.printf("Failed to read file, using default configuration: %d\n", error);
     return false;
   }
 
@@ -56,7 +59,8 @@ bool SystemParser::loadFile(const char* path) {
  */
 uint16_t SystemParser::getUsbVid(void)
 {
-  if (doc.containsKey("usb_vid")) {
+  if(doc.containsKey("usb_vid"))
+  {
     return (uint16_t)strtol(doc["usb_vid"].as<const char*>(), NULL, 0);
   }
   return -1;
@@ -69,7 +73,8 @@ uint16_t SystemParser::getUsbVid(void)
  */
 uint16_t SystemParser::getUsbPid(void)
 {
-  if (doc.containsKey("usb_pid")) {
+  if(doc.containsKey("usb_pid"))
+  {
     return (uint16_t)strtol(doc["usb_pid"].as<const char*>(), NULL, 0);
   }
   return -1;
@@ -82,7 +87,8 @@ uint16_t SystemParser::getUsbPid(void)
  */
 const char* SystemParser::getUsbSerial(void)
 {
-  if (doc.containsKey("usb_serial")) {
+  if(doc.containsKey("usb_serial"))
+  {
     return doc["usb_serial"].as<const char*>();
   }
   return "";
@@ -93,8 +99,10 @@ const char* SystemParser::getUsbSerial(void)
  *
  * @return const char* with the name
  */
-const char* SystemParser::getSsid(void) {
-  if (doc.containsKey("ssid")) {
+const char* SystemParser::getSsid(void)
+{
+  if(doc.containsKey("ssid"))
+  {
     return doc["ssid"].as<const char*>();
   }
   return "";
@@ -105,8 +113,10 @@ const char* SystemParser::getSsid(void) {
  *
  * @return const char* with the password
  */
-const char* SystemParser::getPassword(void) {
-  if (doc.containsKey("password")) {
+const char* SystemParser::getPassword(void)
+{
+  if(doc.containsKey("password"))
+  {
     return doc["password"].as<const char*>();
   }
   return "";
@@ -120,23 +130,28 @@ const char* SystemParser::getPassword(void) {
  * @return false on error
  */
 bool SystemParser::saveFile(const char* path) {
-  if (path != NULL) {
+  if(path != NULL)
+  {
     filePath = path;
   }
-  if (fatfs.exists(filePath)) {
-    if (!fatfs.remove(filePath)) {
-      Serial.println("Could not remove file");
+  if(fatfs.exists(filePath))
+  {
+    if(!fatfs.remove(filePath)) 
+    {
+      console.println("Could not remove file");
       return false;
     }
   }
   File file = fatfs.open(filePath, FILE_WRITE);
-  if (!file) {
-    Serial.println("open file failed");
+  if(!file)
+  {
+    console.println("open file failed");
     return false;
   }
-  if (serializeJson(doc, file) == 0) {
+  if(serializeJson(doc, file) == 0)
+  {
     file.close();
-    Serial.println("Failed to write to file");
+    console.println("Failed to write to file");
     return false;
   }
   file.close();

@@ -84,13 +84,13 @@ else:
                         self._data =data_json.decode('UTF-8');
                         if(not self._data):
                             break
-                        try:
-                            print(self._data, end="")
-                        except:
-                            pass
+                        print(self._data, end="")
+                        
                     except serial.SerialException:
                         ser.close()
                         break
+                    except UnicodeDecodeError:  # Ignore characters that cannot be printed
+                        pass
                     except KeyboardInterrupt:
                         self.runThread = False
     

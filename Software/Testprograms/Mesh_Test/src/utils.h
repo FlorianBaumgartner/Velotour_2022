@@ -19,13 +19,12 @@
 #pragma once
 
 #include <Arduino.h>
-#include "USB.h"
 #include "SdFat.h"
 
-#define CLEAR_TERMINAL "\033[2J\033[1;1H"
-#define Serial USBSerial
+#define TASK_UTILS_FREQ           10            // [Hz]
+#define MSC_STARTUP_DELAY         2000          // [ms]
+#define CONFIG_FILE_NAME          "system.json"
 
-extern USBCDC USBSerial;
 extern FatFileSystem fatfs;
 
 class Utils
@@ -44,6 +43,8 @@ class Utils
     const char* serial = "0";
     const char* ssid = nullptr;
     const char* password = nullptr;
+
+    static void startMsc(void* pvParameter1, uint32_t ulParameter2);
 };
 
 

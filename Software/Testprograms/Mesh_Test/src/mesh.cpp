@@ -1,5 +1,5 @@
 #include "mesh.h"
-#include "utils.h"                          // Use for USB Serial
+#include "console.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include <ArduinoJson.h>
@@ -29,13 +29,13 @@ void Mesh::begin(int id)
   WiFi.disconnect();
   if (esp_now_init() == ESP_OK)             // Startup ESP Now
   {
-    Serial.println("ESPNow Init Success");
+    console.println("ESPNow Init Success");
     esp_now_register_recv_cb(receiveCallback);
     esp_now_register_send_cb(sentCallback);
   }
   else
   {
-    Serial.println("ESPNow Init Failed");
+    console.println("ESPNow Init Failed");
     restart();
   }
 
@@ -90,7 +90,7 @@ void Mesh::update(void *pvParameter)
     }
     else
     {
-      Serial.printf("Own Node ID (%d) is out of index (Max. %d)\n", ref->deviceId, MAX_NODES_NUM);
+      console.printf("Own Node ID (%d) is out of index (Max. %d)\n", ref->deviceId, MAX_NODES_NUM);
     }
 
     Message messagesToSend[MAX_NODES_NUM];
@@ -108,14 +108,14 @@ void Mesh::update(void *pvParameter)
           messagesToSend[messagesToSendCount].origin = (i == ref->deviceId);  // Clear origin flag for relayed messages
           messagesToSendCount++;
         }
-        Serial.printf("System Time: %d, Node %d (LifeTimeRef: %04X): ", millis(), ref->message[i].id, ref->message[i].lifetimeRef);
+        console.printf("System Time: %d, Node %d (LifeTimeRef: %04X): ", millis(), ref->message[i].id, ref->message[i].lifetimeRef);
         if(i == ref->deviceId)                  // Check if own node id is present
         {
-          Serial.printf("Own Node\n");
+          console.printf("Own Node\n");
         }
         else
         {
-          Serial.printf("Node Timestamp = %d -> nodeTimeOffset = %d -> timeDiff = %d\n", ref->message[i].timestamp, ref->nodeTimeOffset[i], timeDiff);
+          console.printf("Node Timestamp = %d -> nodeTimeOffset = %d -> timeDiff = %d\n", ref->message[i].timestamp, ref->nodeTimeOffset[i], timeDiff);
         }   
       }
       ref->origin[i] = ref->message[i].origin;  // Save origin state for IPA access
@@ -128,13 +128,13 @@ void Mesh::update(void *pvParameter)
 
     if(ref->nodeCount > 0)
     {
-      Serial.print("Send node IDs: [");
+      console.print("Send node IDs: [");
       for(int i = 0; i < ref->nodeCount; i++)
       {
-        Serial.printf("%d", messagesToSend[i].id);
-        if(i < ref->nodeCount - 1) Serial.print(", ");
+        console.printf("%d", messagesToSend[i].id);
+        if(i < ref->nodeCount - 1) console.print(", ");
       }
-      Serial.println("]");
+      console.println("]");
 
       static uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
       static esp_now_peer_info_t peerInfo = {};
@@ -147,7 +147,7 @@ void Mesh::update(void *pvParameter)
     }
     else
     {
-      Serial.println("No node data to send (not even own node data - this should no happen)");
+      console.println("No node data to send (not even own node data - this should no happen)");
     }
 
     vTaskDelayUntil(&task_last_tick, (const TickType_t) 1000 / TASK_MESH_FREQ);
@@ -159,7 +159,7 @@ void Mesh::sentCallback(const uint8_t *macAddr, esp_now_send_status_t status)
 {
   if(status != ESP_NOW_SEND_SUCCESS)
   {
-    Serial.println("Could not send data (ESP-NOW Error) -> Reset");
+    console.println("Could not send data (ESP-NOW Error) -> Reset");
     meshPtr->restart();
   }
 }
@@ -172,7 +172,7 @@ void Mesh::receiveCallback(const uint8_t *macAddr, const uint8_t *data, int data
   memcpy(buffer, data, msgLen);
   int nodeCount = msgLen / sizeof(Message);
   bool receivedOwnId = false;
-  Serial.printf("Received Node Count: %d\n", nodeCount);
+  console.printf("Received Node Count: %d\n", nodeCount);
   for(int i = 0; i < nodeCount; i++)
   {
     Message* msg = (Message*) &buffer[i * sizeof(Message)];
@@ -190,7 +190,7 @@ void Mesh::receiveCallback(const uint8_t *macAddr, const uint8_t *data, int data
       }
       else
       {
-        Serial.printf("Received Node ID (%d) is out of index (Max. %d)\n", msg->id, MAX_NODES_NUM);
+        console.printf("Received Node ID (%d) is out of index (Max. %d)\n", msg->id, MAX_NODES_NUM);
       }
     }
     else
@@ -207,7 +207,7 @@ void Mesh::receiveCallback(const uint8_t *macAddr, const uint8_t *data, int data
     noReplyCount++;
     if(noReplyCount > NO_REPLY_THRESHOLD)
     {
-      Serial.println("Didn't receive own node data (is this node even transmitting?) -> Reset");
+      console.println("Didn't receive own node data (is this node even transmitting?) -> Reset");
       meshPtr->restart();
     }
   }

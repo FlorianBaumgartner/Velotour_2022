@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include "console.h"
 #include "utils.h"
 #include "mesh.h"
 #include <TFT_eSPI.h>
@@ -13,11 +14,42 @@ Mesh mesh;
 TFT_eSPI tft = TFT_eSPI();
 TFT_eSprite framebuf = TFT_eSprite(&tft);
 
+void taskA(void *pvParameter)
+{
+  while(true)
+  {
+    TickType_t task_last_tick = xTaskGetTickCount();
+    console.println("This is a very long String of Task A");
+    vTaskDelayUntil(&task_last_tick, (const TickType_t) 500);
+  }
+}
+
+void taskB(void *pvParameter)
+{
+  while(true)
+  {
+    TickType_t task_last_tick = xTaskGetTickCount();
+    console.println("This is a very long String of Task B");
+    vTaskDelayUntil(&task_last_tick, (const TickType_t) 800);
+  }
+}
+
+void taskC(void *pvParameter)
+{
+  while(true)
+  {
+    TickType_t task_last_tick = xTaskGetTickCount();
+    console.println("This is a very long String of Task C");
+    vTaskDelayUntil(&task_last_tick, (const TickType_t) 1000);
+  }
+}
+
 void setup()
 {
   pinMode(LED, OUTPUT);
   pinMode(BACKLIGHT, OUTPUT);
   pinMode(USER_BTN, INPUT_PULLUP);
+  console.begin();
   utils.begin("TEST");
 
   tft.init();
@@ -28,7 +60,11 @@ void setup()
   framebuf.pushSprite(0, 0);
   digitalWrite(BACKLIGHT, 1);  // Backlight on
 
-  mesh.begin(strtol(utils.getSerialNumber(), NULL, 0));
+  //mesh.begin(strtol(utils.getSerialNumber(), NULL, 0));
+
+  xTaskCreate(taskA, "task_A", 2048, NULL, 1, NULL);
+  xTaskCreate(taskB, "task_B", 2048, NULL, 25, NULL);
+  xTaskCreate(taskC, "task_C", 2048, NULL, 12, NULL);
 }
 
 void loop()
