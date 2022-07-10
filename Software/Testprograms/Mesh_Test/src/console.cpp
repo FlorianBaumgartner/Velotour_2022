@@ -23,10 +23,10 @@ bool Console::begin(unsigned long baud, uint32_t config, int8_t rxPin, int8_t tx
 
 bool Console::initialize(void)
 {
+  initialized = true;
   bufferAccessSemaphore = xSemaphoreCreateMutex();
   xTaskCreate(writeTask, "task_consoleWrite", 1024, this, 1, &writeTaskHandle);
   xTaskCreate(interfaceTask, "task_consoleIface", 4096, this, 1, NULL);    // TODO: Stack size must be that large?!
-  initialized = true;
   return true;
 }
 
@@ -102,11 +102,6 @@ void Console::interfaceTask(void *pvParameter)
     vTaskDelayUntil(&task_last_tick, (const TickType_t) 1000 / INTERFACE_UPDATE_RATE);
   }
   vTaskDelete(NULL);
-}
-
-size_t Console::write(uint8_t c)
-{
-  return write(&c, 1);
 }
 
 size_t Console::write(const uint8_t *buffer, size_t size)

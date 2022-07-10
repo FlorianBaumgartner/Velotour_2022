@@ -6,7 +6,7 @@
 
 #define INTERFACE_UPDATE_RATE     10            // [hz]
 #define QUEUE_BUFFER_LENGTH       2048          // [#]    Buffer Size must be power of 2
-#define CONSOLE_ACTIVE_DELAY      1500          // [ms]   Data transmission hold-back delay after console object has been enabled
+#define CONSOLE_ACTIVE_DELAY      3000          // [ms]   Data transmission hold-back delay after console object has been enabled
 #define INTERFACE_ACTIVE_DELAY    1500          // [ms]   Data transmission hold-back delay after physical connection has been established (Terminal opened)
 
 #define CLEAR_TERMINAL "\033[2J\033[1;1H"
@@ -51,16 +51,22 @@ class Console: public Stream
     void enable(bool state) {enabled = state;}
     void flush(void) {readIdx = writeIdx;}
 
-    int available(void) {return stream.available();}
-    int read(void) {return stream.read();}
-    int peek(void) {return stream.peek();}
-    size_t write(uint8_t c);
     size_t write(const uint8_t *buffer, size_t size);
+    inline int available(void) {return stream.available();}
+    inline int read(void) {return stream.read();}
+    inline int peek(void) {return stream.peek();}
+    inline size_t write(uint8_t c) {return write(&c, 1);}
+    inline size_t write(const char* buffer, size_t size) {return write((uint8_t*) buffer, size);}
+    inline size_t write(const char * s) {return write((uint8_t*) s, strlen(s));}
+    inline size_t write(unsigned long n) {return write((uint8_t) n);}
+    inline size_t write(long n) {return write((uint8_t) n);}
+    inline size_t write(unsigned int n) {return write((uint8_t) n);}
+    inline size_t write(int n) {return write((uint8_t) n);}
     operator bool() const {return streamActive;}
 };
 
 #ifndef USE_CUSTOM_CONSOLE
-  //extern USBCDC USBSerial;
+  extern USBCDC USBSerial;      // TODO: Remove here
   extern Console console;
 #endif
 

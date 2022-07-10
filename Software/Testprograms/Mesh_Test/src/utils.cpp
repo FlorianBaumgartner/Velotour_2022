@@ -28,10 +28,10 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-static void task(void* pvParameter);
+static void msc_flush_cb(void);
 static int32_t msc_read_cb(uint32_t lba, void* buffer, uint32_t bufsize);
 static int32_t msc_write_cb(uint32_t lba, uint8_t* buffer, uint32_t bufsize);
-static void msc_flush_cb(void);
+static void usbEventCallback(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
 static volatile bool updated = false;
 static volatile bool connected = false;
 
@@ -86,32 +86,51 @@ bool Utils::begin(const char* labelName, bool forceFormat)
     console.println("[UTILS] System config loading failed.");
   }
 
+  usb_msc.setID(USB_MANUFACTURER, USB_PRODUCT, FIRMWARE_VERSION);
+  usb_msc.setReadWriteCallback(msc_read_cb, msc_write_cb, msc_flush_cb);  // Set callback
+  usb_msc.setCapacity(flash.size() / 512, 512);     // Set disk size, block size should be 512 regardless of spi flash page size
+  usb_msc.begin();
+
   USB.VID(vid);
   USB.PID(pid);
   USB.serialNumber(serial);
   USB.enableDFU();
   USB.productName(USB_PRODUCT);
   USB.manufacturerName(USB_MANUFACTURER);
+  USB.onEvent(usbEventCallback);
   USB.begin();
 
-  usb_msc.setID(USB_MANUFACTURER, USB_PRODUCT, FIRMWARE_VERSION);
-  usb_msc.setReadWriteCallback(msc_read_cb, msc_write_cb, msc_flush_cb);  // Set callback
-  usb_msc.setCapacity(flash.size() / 512, 512);    // Set disk size, block size should be 512 regardless of spi flash page size
-  usb_msc.begin();
-
-  xTimerPendFunctionCall(startMsc, this, 0, (const TickType_t) MSC_STARTUP_DELAY);
+  xTaskCreate(update, "task_utils", 1024, this, 1, NULL);
   return true;
 }
 
-void Utils::startMsc(void *pvParameter1, uint32_t ulParameter2)
+void Utils::update(void* pvParameter)
 {
-  usb_msc.setUnitReady(true);                 // MSC is ready for read/write
-  console.enable(true);
-}
+  Utils* ref = (Utils*)pvParameter;
 
-bool Utils::isConnected(void)
-{
-  return connected;
+  TickType_t mscTimer = 0;
+  bool connectedOld = false; 
+  while(true)
+  {
+    TickType_t task_last_tick = xTaskGetTickCount();
+
+    connected = connected && USB;
+    if(connected && !connectedOld)  // Check if USB Host is connected
+    {
+      mscTimer = xTaskGetTickCount() + MSC_STARTUP_DELAY;
+    }
+    if((!connected && connectedOld) || (xTaskGetTickCount() > mscTimer))     // USB connected (after delay) or just disconnected
+    {
+      ref->mscReady = connected;                       // Make sure that mscReady can only be set if USB Host is connected    
+      usb_msc.setUnitReady(ref->mscReady);             // Set MSC ready for read/write (shows drive to host PC)
+      console.enable(connected);
+      mscTimer = 0;
+    }
+    connectedOld = connected;
+
+    vTaskDelayUntil(&task_last_tick, (const TickType_t) 1000 / TASK_UTILS_FREQ);
+  }
+  vTaskDelete(NULL);
 }
 
 bool Utils::isUpdated(bool clearFlag)
@@ -119,6 +138,11 @@ bool Utils::isUpdated(bool clearFlag)
   bool status = updated;
   if(clearFlag) updated = false;
   return status;
+}
+
+bool Utils::isConnected(void)
+{
+  return connected;
 }
 
 bool Utils::format(const char* labelName)
@@ -175,6 +199,22 @@ bool Utils::format(const char* labelName)
   return 1;
 }
 
+
+void usbEventCallback(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
+{
+  if(event_base == ARDUINO_USB_EVENTS)
+  {
+    arduino_usb_event_data_t* data = (arduino_usb_event_data_t*)event_data;
+    if(event_id == ARDUINO_USB_STARTED_EVENT || event_id == ARDUINO_USB_RESUME_EVENT)
+    {
+      connected = true;
+    }
+    if(event_id == ARDUINO_USB_STOPPED_EVENT || event_id == ARDUINO_USB_SUSPEND_EVENT)
+    {
+      connected = false;
+    }
+  }
+}
 
 // Callback invoked when received READ10 command.
 // Copy disk's data to buffer (up to bufsize) and

@@ -21,8 +21,9 @@
 #include <Arduino.h>
 #include "SdFat.h"
 
+
 #define TASK_UTILS_FREQ           10            // [Hz]
-#define MSC_STARTUP_DELAY         2000          // [ms]
+#define MSC_STARTUP_DELAY         3500          // [ms]
 #define CONFIG_FILE_NAME          "system.json"
 
 extern FatFileSystem fatfs;
@@ -32,19 +33,21 @@ class Utils
   public:
     Utils(void);
     bool begin(const char* labelName, bool forceFormat = false);
-    bool isConnected(void);
     bool isUpdated(bool clearFlag = true);
+    bool isConnected(void);
     bool format(const char* labelName);
     const char* getSerialNumber(void) {return serial;}
-    const char* getSsid(void) {return (ssid[0] == '\0') ? nullptr : ssid;}
-    const char* getPassword(void) {return (password[0] == '\0') ? nullptr : password;}
+    const char* getSsid(void) {return (ssid[0] == '\0')? nullptr : ssid;}
+    const char* getPassword(void) {return (password[0] == '\0')? nullptr : password;}
+    operator bool() const {return mscReady;}
 
   private:
     const char* serial = "0";
     const char* ssid = nullptr;
     const char* password = nullptr;
+    volatile bool mscReady = false;
 
-    static void startMsc(void* pvParameter1, uint32_t ulParameter2);
+    static void update(void* pvParameter);
 };
 
 

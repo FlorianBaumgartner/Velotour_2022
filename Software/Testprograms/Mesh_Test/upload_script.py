@@ -48,7 +48,7 @@ def on_upload(source, target, env):
                 devices.remove(d)
                 print("Removed fake device: '0000000000000001'")
         if not devices:
-            return ['No devices found for entering bootloader, check if "libusb-win32" driver has been installed for "TinyUSB DFU_RT (Interface x)"']
+            return ['No devices found for entering bootloader, check if "libusb-win32" driver has been installed for "TinyUSB DFU_RT (Interface 1)"']
         if(compare_Serial):
             devicesFiltered = [d for d in devices if d["ser"] == usb_serial]
             if not devicesFiltered:

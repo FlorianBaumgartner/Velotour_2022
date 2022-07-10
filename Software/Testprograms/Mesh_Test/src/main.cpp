@@ -19,8 +19,8 @@ void taskA(void *pvParameter)
   while(true)
   {
     TickType_t task_last_tick = xTaskGetTickCount();
-    console.println("This is a very long String of Task A");
-    vTaskDelayUntil(&task_last_tick, (const TickType_t) 500);
+    console.print("A");
+    vTaskDelayUntil(&task_last_tick, (const TickType_t) 200);
   }
 }
 
@@ -29,8 +29,8 @@ void taskB(void *pvParameter)
   while(true)
   {
     TickType_t task_last_tick = xTaskGetTickCount();
-    console.println("This is a very long String of Task B");
-    vTaskDelayUntil(&task_last_tick, (const TickType_t) 800);
+    console.print("B");
+    vTaskDelayUntil(&task_last_tick, (const TickType_t) 300);
   }
 }
 
@@ -39,8 +39,8 @@ void taskC(void *pvParameter)
   while(true)
   {
     TickType_t task_last_tick = xTaskGetTickCount();
-    console.println("This is a very long String of Task C");
-    vTaskDelayUntil(&task_last_tick, (const TickType_t) 1000);
+    console.print("C");
+    vTaskDelayUntil(&task_last_tick, (const TickType_t) 500);
   }
 }
 
@@ -79,7 +79,7 @@ void loop()
   }
   
   static int t = 0;
-  if(millis() - t > 1000 || update)
+  if(millis() - t > 100 || update)
   {
     t = millis();
     update = false;
@@ -88,6 +88,11 @@ void loop()
     framebuf.setCursor(0, 0, 2);
     framebuf.setTextColor(TFT_WHITE);
     framebuf.printf("Serial Number: %s    Time: %d\n", utils.getSerialNumber(), millis());
+
+    //console.printf("Time: %d\n", millis());
+    framebuf.fillRect(3, 135 - 10 - 3, 10, 10, utils.isConnected()? TFT_GREEN : TFT_RED);   // Shows if USB is connected
+    framebuf.fillRect(3 + 10 + 3, 135 - 10 - 3, 10, 10, utils? TFT_GREEN : TFT_RED);        // Shows if USB MSC is ready
+    framebuf.fillRect(3 + 20 + 6, 135 - 10 - 3, 10, 10, console? TFT_GREEN : TFT_RED);      // Shows if USB Serial port is opened
     
     int8_t ids[MAX_NODES_NUM];
     mesh.getNodeIds(ids);
@@ -98,6 +103,7 @@ void loop()
       framebuf.printf("Node %d = %d (%s)", ids[i], mesh.getNodePayload(ids[i]), mesh.getNodeOrigin(ids[i])? "Origin" : "Relayed");
       framebuf.fillRect(150, y + 1, 50, 13, mesh.getNodePayload(ids[i]) == 1? TFT_GREEN : TFT_BLACK);
     }
+
     framebuf.pushSprite(0, 0);
   }
 
