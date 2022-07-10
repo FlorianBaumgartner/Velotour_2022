@@ -19,8 +19,8 @@ void taskA(void *pvParameter)
   while(true)
   {
     TickType_t task_last_tick = xTaskGetTickCount();
-    console.print("A");
-    vTaskDelayUntil(&task_last_tick, (const TickType_t) 200);
+    console.ok.println("This is an ok message");
+    vTaskDelayUntil(&task_last_tick, (const TickType_t) 800);
   }
 }
 
@@ -29,8 +29,8 @@ void taskB(void *pvParameter)
   while(true)
   {
     TickType_t task_last_tick = xTaskGetTickCount();
-    console.print("B");
-    vTaskDelayUntil(&task_last_tick, (const TickType_t) 300);
+    console.warning.println("This is a warning message");
+    vTaskDelayUntil(&task_last_tick, (const TickType_t) 1000);
   }
 }
 
@@ -39,8 +39,8 @@ void taskC(void *pvParameter)
   while(true)
   {
     TickType_t task_last_tick = xTaskGetTickCount();
-    console.print("C");
-    vTaskDelayUntil(&task_last_tick, (const TickType_t) 500);
+    console.error.println("This is an error message");
+    vTaskDelayUntil(&task_last_tick, (const TickType_t) 1500);
   }
 }
 
@@ -63,8 +63,8 @@ void setup()
   //mesh.begin(strtol(utils.getSerialNumber(), NULL, 0));
 
   xTaskCreate(taskA, "task_A", 2048, NULL, 1, NULL);
-  xTaskCreate(taskB, "task_B", 2048, NULL, 25, NULL);
-  xTaskCreate(taskC, "task_C", 2048, NULL, 12, NULL);
+  xTaskCreate(taskB, "task_B", 2048, NULL, 1, NULL);
+  xTaskCreate(taskC, "task_C", 2048, NULL, 1, NULL);
 }
 
 void loop()
@@ -89,7 +89,8 @@ void loop()
     framebuf.setTextColor(TFT_WHITE);
     framebuf.printf("Serial Number: %s    Time: %d\n", utils.getSerialNumber(), millis());
 
-    //console.printf("Time: %d\n", millis());
+    //console.printTimestamp(); console.println("Test");
+    console.printf("Time: %d\n", millis());
     framebuf.fillRect(3, 135 - 10 - 3, 10, 10, utils.isConnected()? TFT_GREEN : TFT_RED);   // Shows if USB is connected
     framebuf.fillRect(3 + 10 + 3, 135 - 10 - 3, 10, 10, utils? TFT_GREEN : TFT_RED);        // Shows if USB MSC is ready
     framebuf.fillRect(3 + 20 + 6, 135 - 10 - 3, 10, 10, console? TFT_GREEN : TFT_RED);      // Shows if USB Serial port is opened

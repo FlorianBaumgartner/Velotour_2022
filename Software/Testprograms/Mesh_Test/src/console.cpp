@@ -1,5 +1,6 @@
 #include "console.h"
 
+
 bool Console::begin(void)
 {
   if(type == USBCDC_t)
@@ -25,7 +26,7 @@ bool Console::initialize(void)
 {
   initialized = true;
   bufferAccessSemaphore = xSemaphoreCreateMutex();
-  xTaskCreate(writeTask, "task_consoleWrite", 1024, this, 1, &writeTaskHandle);
+  xTaskCreate(writeTask, "task_consoleWrite", 2048, this, 1, &writeTaskHandle);
   xTaskCreate(interfaceTask, "task_consoleIface", 4096, this, 1, NULL);    // TODO: Stack size must be that large?!
   return true;
 }
@@ -107,10 +108,10 @@ void Console::interfaceTask(void *pvParameter)
 size_t Console::write(const uint8_t *buffer, size_t size)
 {
   if(size == 0) return 0;
-  size = min(size, (size_t) QUEUE_BUFFER_LENGTH - 1);
   if(xSemaphoreTake(bufferAccessSemaphore, portMAX_DELAY))
   {
     int free;
+    size = min(size, (size_t) QUEUE_BUFFER_LENGTH - 1);
     if(writeIdx + size <= QUEUE_BUFFER_LENGTH)
     {
       memcpy((uint8_t*) ringBuffer + writeIdx, buffer, size);
@@ -136,16 +137,24 @@ size_t Console::write(const uint8_t *buffer, size_t size)
   return 0;
 }
 
+void Console::printTimestamp(void)
+{
+  int h = _min(millis() / 3600000, 99);
+  int m = (millis() / 60000) % 60;
+  int s = (millis() / 1000) % 60;
+  int ms = millis() % 1000;
+  printf("[%02d:%02d:%02d.%03d] ", h, m, s, ms);
+}
+
 void Console::printStartupMessage(void)
 {
-  stream.printf(CLEAR_TERMINAL);
-  stream.printf("\033[0;32;49m");
+  stream.print(CONSOLE_CLEAR);
+  stream.print(CONSOLE_COLOR_BOLD_CYAN CONSOLE_BACKGROUND_DEFAULT);
   stream.println("****************************************************");
   stream.println("*                  ESP32-S2 Utility                *");
   stream.println("*             2022, Florian Baumgartner            *");
   stream.println("****************************************************");
-  stream.printf("\033[0;39;49m");
-  stream.println();
+  stream.println(CONSOLE_LOG);
 }
 
 
