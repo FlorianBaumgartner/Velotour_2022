@@ -8,7 +8,7 @@ Created on Wed Jun 29 00:16:40 2022
 import subprocess
 from pathlib import Path
 
-ports = ["COM103"]
+ports = ["COM107"]
 
 for port in ports:
     list_files = subprocess.run(["wt.exe", "powershell", "python",

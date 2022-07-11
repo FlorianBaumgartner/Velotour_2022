@@ -36,7 +36,7 @@ bool SystemParser::loadFile(const char* path) {
 
   if(!file)
   {
-    console.println("open file failed");
+    console.error.println("[PARSER] Open file failed");
     return false;
   }
 
@@ -44,7 +44,7 @@ bool SystemParser::loadFile(const char* path) {
   if(error)
   {
     file.close();
-    console.printf("Failed to read file, using default configuration: %d\n", error);
+    console.error.printf("[PARSER] Failed to read file, using default configuration: %d\n", error);
     return false;
   }
 
@@ -138,20 +138,20 @@ bool SystemParser::saveFile(const char* path) {
   {
     if(!fatfs.remove(filePath)) 
     {
-      console.println("Could not remove file");
+      console.error.println("[PARSER] Could not remove file");
       return false;
     }
   }
   File file = fatfs.open(filePath, FILE_WRITE);
   if(!file)
   {
-    console.println("open file failed");
+    console.error.println("[PARSER] Open file failed");
     return false;
   }
   if(serializeJson(doc, file) == 0)
   {
     file.close();
-    console.println("Failed to write to file");
+    console.error.println("[PARSER] Failed to write to file");
     return false;
   }
   file.close();

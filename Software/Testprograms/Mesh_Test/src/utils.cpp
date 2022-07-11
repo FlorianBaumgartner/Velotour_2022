@@ -79,11 +79,11 @@ bool Utils::begin(const char* labelName, bool forceFormat)
     }
     ssid = systemParser.getSsid();
     password = systemParser.getPassword();
-    console.println("[UTILS] System config loading was successful.");
+    console.ok.println("[UTILS] System config loading was successful.");
   }
   else
   {
-    console.println("[UTILS] System config loading failed.");
+    console.error.println("[UTILS] System config loading failed.");
   }
 
   usb_msc.setID(USB_MANUFACTURER, USB_PRODUCT, FIRMWARE_VERSION);
@@ -150,14 +150,13 @@ bool Utils::format(const char* labelName)
   static FATFS elmchamFatfs;
   static uint8_t workbuf[4096];  // Working buffer for f_fdisk function.
 
-  console.println("[UTILS] Partitioning flash with 1 primary partition...");
+  console.log.println("[UTILS] Partitioning flash with 1 primary partition...");
   static DWORD plist[] = {100, 0, 0, 0};      // 1 primary partition with 100% of space.
   static uint8_t buf[512] = {0};              // Working buffer for f_fdisk function.
   static FRESULT r = f_fdisk(0, plist, buf);  // Partition the flash with 1 partition that takes the entire space.
   if(r != FR_OK)
   {
-    console.print("[UTILS] Error, f_fdisk failed with error code: ");
-    console.println(r, DEC);
+    console.error.printf("[UTILS] Error, f_fdisk failed with error code: %d\n", r);
     return 0;
   }
   console.println("[UTILS] Partitioned flash!");
@@ -165,36 +164,32 @@ bool Utils::format(const char* labelName)
   r = f_mkfs("", FM_FAT | FM_SFD, 0, workbuf, sizeof(workbuf));  // Make filesystem.
   if(r != FR_OK)
   {
-    console.print("[UTILS] Error, f_mkfs failed with error code: ");
-    console.println(r, DEC);
+    console.error.printf("[UTILS] Error, f_mkfs failed with error code: %d\n", r);
     return 0;
   }
 
   r = f_mount(&elmchamFatfs, "0:", 1);  // mount to set disk label
   if (r != FR_OK)
   {
-    console.print("[UTILS] Error, f_mount failed with error code: ");
-    console.println(r, DEC);
+    console.error.printf("[UTILS] Error, f_mount failed with error code: %d\n", r);
     return 0;
   }
-  console.print("[UTILS] Setting disk label to: ");
-  console.println(labelName);
+  console.log.printf("[UTILS] Setting disk label to: %s\n", labelName);
   r = f_setlabel(labelName);  // Setting label
   if (r != FR_OK)
   {
-    console.print("[UTILS] Error, f_setlabel failed with error code: ");
-    console.println(r, DEC);
+    console.error.printf("[UTILS] Error, f_setlabel failed with error code: %d\n", r);
     return 0;
   }
   f_unmount("0:");     // unmount
   flash.syncBlocks();  // sync to make sure all data is written to flash
-  console.println("[UTILS] Formatted flash!");
+  console.ok.println("[UTILS] Formatted flash!");
   if (!fatfs.begin(&flash))  // Check new filesystem
   {
-    console.println("[UTILS] Error, failed to mount newly formatted filesystem!");
+    console.error.println("[UTILS] Error, failed to mount newly formatted filesystem!");
     return 0;
   }
-  console.println("[UTILS] Flash chip successfully formatted with new empty filesystem!");
+  console.ok.println("[UTILS] Flash chip successfully formatted with new empty filesystem!");
   yield();
   return 1;
 }

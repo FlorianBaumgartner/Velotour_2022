@@ -47,16 +47,19 @@
 #define CONSOLE_ERROR                   (CONSOLE_COLOR_RED CONSOLE_BACKGROUND_DEFAULT)
 #define CONSOLE_WARNING                 (CONSOLE_COLOR_YELLOW CONSOLE_BACKGROUND_DEFAULT)
 
+#define DISABLE_MODULE_LEVEL            dummy
 
 class ConsoleStatus: public Stream
 {
   public:
     Stream* console = nullptr;
-    enum ConsoleType {StatusOk_t, StatusLog_t, StatusWarning_t, StatusError_t};
+    enum ConsoleType {StatusOk_t, StatusLog_t, StatusWarning_t, StatusError_t, StatusDummy_t};
     ConsoleType type;
+    bool enabled = true;
     
     ConsoleStatus(ConsoleType t): type(t) {}
     inline void ref(Stream* c) {console = c;}
+    inline void enable(bool s) {enabled = s;}
     inline int available(void) {return console->available();}
     inline int read(void) {return console->read();}
     inline int peek(void) {return console->peek();}
@@ -64,6 +67,7 @@ class ConsoleStatus: public Stream
     inline size_t write(const char* buffer, size_t size) {return write((uint8_t*) buffer, size);}
     size_t write(const uint8_t* buffer, size_t size)
     {
+      if(!enabled || type == StatusDummy_t) return 0;
       switch(type)
       {
         case StatusOk_t:
@@ -118,14 +122,28 @@ class Console: public Stream
     }
     
   public:
-    Console(USBCDC &stream): stream(stream), type(USBCDC_t) {ok.ref(this); log.ref(this); error.ref(this); warning.ref(this);}
-    Console(HardwareSerial &stream): stream(stream), type(HardwareSerial_t) {ok.ref(this); log.ref(this); error.ref(this); warning.ref(this);}
+    enum ConsoleLevel {LEVEL_LOG = 0, LEVEL_OK = 1, LEVEL_WARNING = 2, LEVEL_ERROR = 3, LEVEL_OFF = 4};
+    ConsoleStatus ok = ConsoleStatus(ConsoleStatus::StatusOk_t);
+    ConsoleStatus log = ConsoleStatus(ConsoleStatus::StatusLog_t);
+    ConsoleStatus error = ConsoleStatus(ConsoleStatus::StatusError_t);
+    ConsoleStatus warning = ConsoleStatus(ConsoleStatus::StatusWarning_t);
+    ConsoleStatus dummy = ConsoleStatus(ConsoleStatus::StatusDummy_t);
+  
+    Console(USBCDC &stream): stream(stream), type(USBCDC_t) {ok.ref(this); log.ref(this); error.ref(this); warning.ref(this); dummy.ref(this);}
+    Console(HardwareSerial &stream): stream(stream), type(HardwareSerial_t) {ok.ref(this); log.ref(this); error.ref(this); warning.ref(this); dummy.ref(this);}
     bool begin(void);                 // Used for USBSerial
     bool begin(unsigned long baud, uint32_t config=SERIAL_8N1, int8_t rxPin=-1, int8_t txPin=-1, bool invert=false, unsigned long timeout_ms = 20000UL, uint8_t rxfifo_full_thrhd = 112);    // Used for HardwareSerial
     void end(void);
     void enable(bool state) {enabled = state;}
     void flush(void) {readIdx = writeIdx;}
     void printTimestamp(void);        // TODO: Add possibillity to add string as parameter
+    void setLevel(ConsoleLevel level)
+    {
+      log.enable(level <= LEVEL_LOG);
+      ok.enable(level <= LEVEL_OK);
+      warning.enable(level <= LEVEL_WARNING);
+      error.enable(level <= LEVEL_ERROR);
+    }
 
     operator bool() const {return streamActive;}
     inline int available(void) {return stream.available();}
@@ -139,11 +157,6 @@ class Console: public Stream
     inline size_t write(unsigned int n) {return write((uint8_t) n);}
     inline size_t write(int n) {return write((uint8_t) n);}
     size_t write(const uint8_t *buffer, size_t size);    
-
-    ConsoleStatus ok = ConsoleStatus(ConsoleStatus::StatusOk_t);
-    ConsoleStatus log = ConsoleStatus(ConsoleStatus::StatusLog_t);
-    ConsoleStatus error = ConsoleStatus(ConsoleStatus::StatusError_t);
-    ConsoleStatus warning = ConsoleStatus(ConsoleStatus::StatusWarning_t);
 };
 
 
