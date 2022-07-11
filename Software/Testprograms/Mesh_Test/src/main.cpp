@@ -30,8 +30,9 @@ void taskA(void *pvParameter)
   while(true)
   {
     TickType_t task_last_tick = xTaskGetTickCount();
-    console.ok.println("This is an ok message");
-    vTaskDelayUntil(&task_last_tick, (const TickType_t) 800);
+    //console.ok.println("This is an ok message");
+    console.ok.printf("Time: %d\n", millis());
+    vTaskDelayUntil(&task_last_tick, (const TickType_t) 1000);
   }
 }
 
@@ -80,7 +81,7 @@ void setup()
 
   mesh.begin(strtol(utils.getSerialNumber(), NULL, 0));
 
-  //xTaskCreate(taskA, "task_A", 2048, NULL, 1, NULL);
+  xTaskCreate(taskA, "task_A", 2048, NULL, 1, NULL);
   //xTaskCreate(taskB, "task_B", 2048, NULL, 1, NULL);
   //xTaskCreate(taskC, "task_C", 2048, NULL, 1, NULL);
 }
@@ -134,9 +135,16 @@ void loop()
     {
       int y = 20 + i * 15;
       framebuf.setCursor(0, y, 2);
-      framebuf.printf("Node %d = %08X (%s)", ids[i], mesh.getNodePayload(ids[i]), mesh.getNodeOrigin(ids[i])? "Origin" : "Relayed");
+      uint32_t payload = mesh.getNodePayload(ids[i]);
+      framebuf.setTextColor(TFT_WHITE);
+      framebuf.printf("Node %d = ", ids[i]);
+      framebuf.setTextColor((payload != -1)? TFT_GREEN : TFT_RED);
+      framebuf.printf("%08X", payload);
+      framebuf.setTextColor(TFT_WHITE);
+      framebuf.printf(" (%s)", mesh.getNodeOrigin(ids[i])? "Origin" : "Relayed");
     }
 
+    framebuf.setTextColor(TFT_WHITE);
     framebuf.setCursor(100, 120, 2);
     framebuf.print("Card: ");
     if(card != -1)

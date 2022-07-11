@@ -63,7 +63,7 @@ def on_upload(source, target, env):
         devices = loader.get_drives()
         print("There is already a UF2-Drive available, skip entering bootloader (serial number cannot be compared)")
 
-    TIMEOUT = 25        # [s]
+    TIMEOUT = 15        # [s]
     uploadCount = 0
     t = time.time()
     print("Start Download:", end = '')
@@ -74,6 +74,7 @@ def on_upload(source, target, env):
             shutil.copyfile(firmwareFilePath, drives[0] + "/NEW.UF2")
             print(" -> OK", end = "")
             uploadCount += 1
+            t = time.time()
         if uploadCount == len(devices):
             print("\nDownload was successful!")
             return False
