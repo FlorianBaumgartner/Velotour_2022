@@ -47,15 +47,19 @@ Utils::Utils(void)
 
 bool Utils::begin(const char* labelName, bool forceFormat)
 {
+  bool status = true;
   if(!flash.begin())
   {
-    return false;
+    console.error.println("[UTILS] Could not initialize SPI Flash");
+    status = false;
   }
   if(!fatfs.begin(&flash) || forceFormat)  // Check if disk must be formated
   {
+    console.log.println("[UTILS] SPI Flash needs to be formatted");
     if(!format(labelName))
     {
-      return false;
+      console.error.println("[UTILS] Could not format SPI Flash");
+      status = false;
     }
   }
   delay(200);
@@ -84,6 +88,7 @@ bool Utils::begin(const char* labelName, bool forceFormat)
   else
   {
     console.error.println("[UTILS] System config loading failed.");
+    status = false;
   }
 
   usb_msc.setID(USB_MANUFACTURER, USB_PRODUCT, FIRMWARE_VERSION);
@@ -101,7 +106,7 @@ bool Utils::begin(const char* labelName, bool forceFormat)
   USB.begin();
 
   xTaskCreate(update, "task_utils", 1024, this, 1, NULL);
-  return true;
+  return status;
 }
 
 void Utils::update(void* pvParameter)

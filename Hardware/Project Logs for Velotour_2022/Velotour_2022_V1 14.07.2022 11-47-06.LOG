@@ -1,0 +1,14 @@
+Removed Parameter aliExpress: from Part R7
+Removed Parameter aliExpress: from Part R7
+Removed Parameter Bauteilwert:SI1013R-T1-GE3 from Part Q10
+Removed Parameter Beschreibung:MOSFET P-Channel from Part Q10
+Removed Parameter Stückpreis:0.41 from Part Q10
+Change Value of Parameter Digikey in Part Q10 Old=SI1013R-T1-GE3CT-ND New=785-1001-1-ND
+Change Value of Parameter Farnell in Part Q10 Old=2335267 New=
+Change Value of Parameter Mouser in Part Q10 Old=781-SI1013R-T1-GE3 New=
+Added Parameter Component Description=MOSFET P-Channel to Part Q10
+Added Parameter ComponentLink1Description=Datasheet to Part Q10
+Added Parameter ComponentLink1URL=https://datasheet.lcsc.com/lcsc/1810171817_Alpha---Omega-Semicon-AO3401A_C15127.pdf to Part Q10
+Added Parameter Component Value=AO3401A to Part Q10
+Added Parameter JLC-Parts=C15127 to Part Q10
+Added Parameter Unit Price=0.14 to Part Q10

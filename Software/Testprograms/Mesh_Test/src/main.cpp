@@ -12,6 +12,10 @@
 #define SCL               2
 #define SDA               3
 
+#define LATCH             40
+#define SWITCH            38
+#define LED2              15
+
 #define BLINK_INTERVAL    500
 
 
@@ -58,6 +62,13 @@ void taskC(void *pvParameter)
 
 void setup()
 {
+  pinMode(LATCH, OUTPUT);
+  digitalWrite(LATCH, 1);
+
+  pinMode(SWITCH, INPUT_PULLUP);
+  pinMode(LED2, OUTPUT);
+  digitalWrite(LED2, 0);
+
   pinMode(LED, OUTPUT);
   pinMode(BACKLIGHT, OUTPUT);
   pinMode(USER_BTN, INPUT_PULLUP);
@@ -106,6 +117,12 @@ void loop()
   {
     nodeCount = mesh.getNodeCount();
     update = true;
+  }
+
+  digitalWrite(LED2, digitalRead(SWITCH));
+  if(!digitalRead(USER_BTN))
+  {
+    digitalWrite(LATCH, 0);
   }
   
   static int t = 0;
