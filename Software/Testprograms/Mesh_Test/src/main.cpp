@@ -2,25 +2,25 @@
 #include "console.h"
 #include "utils.h"
 #include "mesh.h"
+#include "hmi.h"
 #include <TFT_eSPI.h>
 #include <MFRC522.h>
 
 #define USER_BTN          0
+#define USER_LED          13
 #define BACKLIGHT         33
-#define LED               13
 #define RST_PIN           1
 #define SCL               2
 #define SDA               3
-
-#define LATCH             40
-#define SWITCH            38
-#define LED2              15
+#define LED               40
+#define BUZZER            4
 
 #define BLINK_INTERVAL    500
 
 
 Utils utils;
 Mesh mesh;
+Hmi hmi(LED, BUZZER);
 TFT_eSPI tft = TFT_eSPI();
 TFT_eSprite framebuf = TFT_eSprite(&tft);
 
@@ -62,18 +62,12 @@ void taskC(void *pvParameter)
 
 void setup()
 {
-  pinMode(LATCH, OUTPUT);
-  digitalWrite(LATCH, 1);
-
-  pinMode(SWITCH, INPUT_PULLUP);
-  pinMode(LED2, OUTPUT);
-  digitalWrite(LED2, 0);
-
-  pinMode(LED, OUTPUT);
   pinMode(BACKLIGHT, OUTPUT);
+  pinMode(USER_LED, OUTPUT);
   pinMode(USER_BTN, INPUT_PULLUP);
   console.begin();
   console.setLevel(Console::LEVEL_LOG);
+  hmi.begin();
   utils.begin("TEST");
 
   tft.init();
@@ -117,12 +111,6 @@ void loop()
   {
     nodeCount = mesh.getNodeCount();
     update = true;
-  }
-
-  digitalWrite(LED2, digitalRead(SWITCH));
-  if(!digitalRead(USER_BTN))
-  {
-    digitalWrite(LATCH, 0);
   }
   
   static int t = 0;
