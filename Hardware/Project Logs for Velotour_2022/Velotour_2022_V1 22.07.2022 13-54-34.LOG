@@ -1,0 +1,44 @@
+Added Component: Designator=M1(SMD Solder-Nut (M3 3mm))
+Add component (AddParameter): Name = "Component Description"; Value = "Solderable Standoff Nut"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Component Value"; Value = "M3 3mm"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink1Description"; Value = "Datasheet"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink1URL"; Value = "https://datasheet.lcsc.com/lcsc/2112061830_Sinhoo-SMTSO3030CTJ_C2915308.pdf"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Digikey"; Value = ""; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Farnell"; Value = ""; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "JLC-Parts"; Value = "C2915308"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Mouser"; Value = "153-SMTSO-M3-3ET"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Unit Price"; Value = "0.05"; VariantName = "[No Variations]"
+Added Component: Designator=M2(SMD Solder-Nut (M3 3mm))
+Add component (AddParameter): Name = "Component Description"; Value = "Solderable Standoff Nut"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Component Value"; Value = "M3 3mm"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink1Description"; Value = "Datasheet"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink1URL"; Value = "https://datasheet.lcsc.com/lcsc/2112061830_Sinhoo-SMTSO3030CTJ_C2915308.pdf"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Digikey"; Value = ""; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Farnell"; Value = ""; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "JLC-Parts"; Value = "C2915308"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Mouser"; Value = "153-SMTSO-M3-3ET"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Unit Price"; Value = "0.05"; VariantName = "[No Variations]"
+Added Component: Designator=M3(SMD Solder-Nut (M3 3mm))
+Add component (AddParameter): Name = "Component Description"; Value = "Solderable Standoff Nut"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Component Value"; Value = "M3 3mm"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink1Description"; Value = "Datasheet"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink1URL"; Value = "https://datasheet.lcsc.com/lcsc/2112061830_Sinhoo-SMTSO3030CTJ_C2915308.pdf"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Digikey"; Value = ""; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Farnell"; Value = ""; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "JLC-Parts"; Value = "C2915308"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Mouser"; Value = "153-SMTSO-M3-3ET"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Unit Price"; Value = "0.05"; VariantName = "[No Variations]"
+Added Component: Designator=M4(SMD Solder-Nut (M3 3mm))
+Add component (AddParameter): Name = "Component Description"; Value = "Solderable Standoff Nut"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Component Value"; Value = "M3 3mm"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink1Description"; Value = "Datasheet"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink1URL"; Value = "https://datasheet.lcsc.com/lcsc/2112061830_Sinhoo-SMTSO3030CTJ_C2915308.pdf"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Digikey"; Value = ""; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Farnell"; Value = ""; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "JLC-Parts"; Value = "C2915308"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Mouser"; Value = "153-SMTSO-M3-3ET"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Unit Price"; Value = "0.05"; VariantName = "[No Variations]"
+Added Member To Class: ClassName=Velotour_2022_V1.0 Member=Component M1 SMTSO-M3-3ET
+Added Member To Class: ClassName=Velotour_2022_V1.0 Member=Component M2 SMTSO-M3-3ET
+Added Member To Class: ClassName=Velotour_2022_V1.0 Member=Component M3 SMTSO-M3-3ET
+Added Member To Class: ClassName=Velotour_2022_V1.0 Member=Component M4 SMTSO-M3-3ET

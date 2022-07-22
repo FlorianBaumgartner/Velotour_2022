@@ -1,0 +1,9 @@
+Removed Pin From Net: NetName=NFC_SCL Pin=R19-1
+Removed Pin From Net: NetName=NFC_SDA Pin=R19-2
+Removed Pin From Net: NetName=NFC_I\R\Q\ Pin=R19-3
+Removed Pin From Net: NetName=NFC_R\S\T\ Pin=R19-4
+Added Pin To Net: NetName=NFC_R\S\T\ Pin=R19-1
+Added Pin To Net: NetName=NFC_I\R\Q\ Pin=R19-2
+Added Pin To Net: NetName=NFC_SDA Pin=R19-3
+Added Pin To Net: NetName=NFC_SCL Pin=R19-4
+Added Room: Name=Velotour_2022_V1.0

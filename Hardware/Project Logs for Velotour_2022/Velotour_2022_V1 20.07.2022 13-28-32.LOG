@@ -1,0 +1,15 @@
+Change Value of Parameter Component Description in Part X12 Old=Board-To-Wire Connector (Receptacle) New=Pin Header
+Change Value of Parameter ComponentLink1Description in Part X12 Old=Datasheet New=
+Change Value of Parameter ComponentLink1URL in Part X12 Old=https://4donline.ihs.com/images/VipMasterIC/IC/PCON/PCONS21961/PCONS22028-1.pdf?hkey=52A5661711E402568146F3353EA87419 New=
+Change Value of Parameter Component Value in Part X12 Old=PTSM 0,5/ 6-HH-2,5-THR R32 New=
+Change Value of Parameter Digikey in Part X12 Old=277-2312-1-ND New=
+Change Value of Parameter Farnell in Part X12 Old=3240578 New=
+Change Value of Parameter JLC-Parts in Part X12 Old= New=
+Change Value of Parameter Mouser in Part X12 Old=651-1778667 New=
+Change Value of Parameter Unit Price in Part X12 Old=1.42 New=
+Added Parameter JLC-Parts= to Part A1
+Added Parameter JLC-Parts= to Part TP43
+Added Parameter JLC-Parts= to Part TP43
+Added Parameter JLC-Parts= to Part TP43
+Added Parameter JLC-Parts= to Part TP43
+Added Parameter JLC-Parts= to Part TP43

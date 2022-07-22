@@ -1,0 +1,6 @@
+Removed Parameter Bauteilwert:100 (75V, 100mW, 1%) from Part R26
+Removed Parameter Beschreibung:Dickschicht Chipwiderstand from Part R26
+Removed Parameter Stückpreis:0.01 from Part R26
+Added Parameter Component Description=Thick Film Chip Resistor to Part R26
+Added Parameter Component Value=100 (75V, 100mW, 1%) to Part R26
+Added Parameter Unit Price=0.01 to Part R26

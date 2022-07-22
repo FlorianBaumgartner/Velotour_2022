@@ -1,0 +1,26 @@
+Removed Parameter Bauteilwert:13.56MHz from Part A1
+Removed Parameter Bauteilwert:SK12D07VG4 (SPDT) from Part S1
+Removed Parameter Beschreibung:PCB Loop-Antenna from Part A1
+Removed Parameter Beschreibung:Slide Switch from Part S1
+Removed Parameter Stückpreis:0.00 from Part A1
+Removed Parameter Stückpreis:0.02 from Part S1
+Change Value of Parameter Component Description in Part S1 Old=Tactile Switch New=
+Change Value of Parameter ComponentLink1Description in Part S1 Old=Datasheet New=
+Change Value of Parameter ComponentLink1URL in Part S1 Old=https://datasheet.lcsc.com/lcsc/1912111437_SHOU-HAN-SK12D07VG4_C393937.pdf New=
+Change Value of Parameter ComponentLink1URL in Part S1 Old=https://datasheet.lcsc.com/lcsc/2002271431_XKB-Connectivity-TS-1187A-B-A-B_C318884.pdf New=
+Change Value of Parameter Component Value in Part S1 Old=TS-1187A-B-A-B New=
+Change Value of Parameter Digikey in Part S1 Old=CKN12221-1-ND New=
+Change Value of Parameter Digikey in Part S1 Old=SK12D07VG4NS-ND New=
+Change Value of Parameter Farnell in Part S1 Old=3780596 New=
+Change Value of Parameter JLC-Parts in Part S1 Old=C318884 New=
+Change Value of Parameter JLC-Parts in Part S1 Old=C393937 New=
+Change Value of Parameter Mouser in Part S1 Old=611-PTS526SK15SMR2L New=
+Change Value of Parameter Mouser in Part S1 Old=611-SK12D07VG4NSPA New=
+Change Value of Parameter Unit Price in Part S1 Old=0.02 New=
+Added Parameter Component Description=Micro Detector Switch to Part S1
+Added Parameter Component Description=PCB Loop-Antenna to Part A1
+Added Parameter Component Value=13.56MHz to Part A1
+Added Parameter Component Value= to Part S1
+Added Parameter JLC-Parts= to Part A1
+Added Parameter Unit Price=0.00 to Part A1
+Added Parameter Unit Price= to Part S1

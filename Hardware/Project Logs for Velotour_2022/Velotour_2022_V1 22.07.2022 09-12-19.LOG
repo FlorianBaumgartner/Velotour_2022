@@ -1,0 +1,14 @@
+Removed Pin From Net: NetName=GND Pin=A1-3
+Removed Pin From Net: NetName=GND Pin=C25-2
+Removed Pin From Net: NetName=GND Pin=C26-2
+Removed Pin From Net: NetName=GND Pin=C27-2
+Removed Pin From Net: NetName=GND Pin=C29-1
+Removed Pin From Net: NetName=GND Pin=C30-1
+Change Footprint: Cannot match pads with new footprint in component :U7 Footprint:SMD IC QFN-32
+Add Pin To Net: Unknown Pin: Pin U7-PAD
+Added Pin To Net: NetName=NetA1_3 Pin=A1-3
+Added Pin To Net: NetName=NetA1_3 Pin=C26-2
+Added Pin To Net: NetName=NetA1_3 Pin=C27-2
+Added Pin To Net: NetName=NetA1_3 Pin=C29-1
+Added Pin To Net: NetName=NetA1_3 Pin=C30-1
+Added Net: Name=NetA1_3

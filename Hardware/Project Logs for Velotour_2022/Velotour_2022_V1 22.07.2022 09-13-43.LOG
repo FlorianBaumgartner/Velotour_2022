@@ -1,0 +1,41 @@
+Added Component: Designator=U7(SMD IC QFN-32)
+Add component (AddParameter): Name = "Component Description"; Value = "Standard performance MIFARE and NTAG frontend"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Component Value"; Value = "MFRC522"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink1Description"; Value = "Datasheet"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink1URL"; Value = "https://media.digikey.com/pdf/Data%20Sheets/NXP%20PDFs/MFRC522.pdf"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Digikey"; Value = "568-8603-ND"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Farnell"; Value = "1902838"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "JLC-Parts"; Value = "C2760772"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Mouser"; Value = "771-MFRC52202HN1151"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Unit Price"; Value = "0.88"; VariantName = "[No Variations]"
+Added Pin To Net: NetName=3V3 Pin=U7-1
+Added Pin To Net: NetName=3V3 Pin=U7-2
+Added Pin To Net: NetName=3V3 Pin=U7-3
+Added Pin To Net: NetName=GND Pin=U7-4
+Added Pin To Net: NetName=GND Pin=U7-5
+Added Pin To Net: NetName=NFC_R\S\T\ Pin=U7-6
+Added Pin To Net: NetName=3V3 Pin=U7-9
+Added Pin To Net: NetName=GND Pin=U7-10
+Added Pin To Net: NetName=NetL3_1 Pin=U7-11
+Added Pin To Net: NetName=3V3 Pin=U7-12
+Added Pin To Net: NetName=NetL4_1 Pin=U7-13
+Added Pin To Net: NetName=GND Pin=U7-14
+Added Pin To Net: NetName=3V3 Pin=U7-15
+Added Pin To Net: NetName=NetC34_2 Pin=U7-16
+Added Pin To Net: NetName=NetR20_1 Pin=U7-17
+Added Pin To Net: NetName=GND Pin=U7-18
+Added Pin To Net: NetName=NetC36_1 Pin=U7-21
+Added Pin To Net: NetName=NetC35_1 Pin=U7-22
+Added Pin To Net: NetName=NFC_I\R\Q\ Pin=U7-23
+Added Pin To Net: NetName=NFC_SDA Pin=U7-24
+Added Pin To Net: NetName=GND Pin=U7-25
+Added Pin To Net: NetName=GND Pin=U7-26
+Added Pin To Net: NetName=GND Pin=U7-27
+Added Pin To Net: NetName=GND Pin=U7-28
+Added Pin To Net: NetName=GND Pin=U7-29
+Added Pin To Net: NetName=GND Pin=U7-30
+Added Pin To Net: NetName=NFC_SCL Pin=U7-31
+Added Pin To Net: NetName=GND Pin=U7-32
+Added Pin To Net: NetName=GND Pin=U7-PAD
+Added Member To Class: ClassName=Velotour_2022_V1.0 Member=Component U7 MFRC522
+Added Room: Name=Velotour_2022_V1.0
