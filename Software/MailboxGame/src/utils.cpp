@@ -27,7 +27,6 @@
 #include "format/diskio.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "esp_task_wdt.h"
 
 static void msc_flush_cb(void);
 static int32_t msc_read_cb(uint32_t lba, void* buffer, uint32_t bufsize);
@@ -149,18 +148,6 @@ bool Utils::isUpdated(bool clearFlag)
 bool Utils::isConnected(void)
 {
   return connected;
-}
-
-void Utils::startWatchdog(uint32_t seconds)
-{
-  esp_task_wdt_init(seconds, true);   // Enable panic so ESP32 restarts
-  esp_task_wdt_add(NULL);             // Add current thread to WDT watch
-  esp_task_wdt_reset();
-}
-
-void Utils::feedWatchdog(void)
-{
-  esp_task_wdt_reset();
 }
 
 bool Utils::format(const char* labelName)

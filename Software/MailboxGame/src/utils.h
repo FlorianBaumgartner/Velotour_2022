@@ -40,8 +40,6 @@ class Utils
     const char* getSsid(void) {return (ssid[0] == '\0')? nullptr : ssid;}
     const char* getPassword(void) {return (password[0] == '\0')? nullptr : password;}
     operator bool() const {return mscReady;}
-    void startWatchdog(uint32_t seconds);
-    void feedWatchdog(void);
 
   private:
     const char* serial = "0";
