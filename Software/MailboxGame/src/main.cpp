@@ -33,7 +33,7 @@ void setup()
 {
   pinMode(USER_BTN, INPUT_PULLUP);
   console.begin();
-  sys.begin(10);   // Set Watchdof Timout to 10s
+  sys.begin(10);   // Set Watchdog Timout to 10s
   hmi.begin();
   utils.begin("DRIVE");
 

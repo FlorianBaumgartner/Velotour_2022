@@ -29,11 +29,12 @@ class Mesh
     void begin(int id = 0);
     void end(void);
     void restart(bool immediate = false);
-    inline void setPayload(uint32_t data) {message[deviceId].payload = data;};
-    inline int8_t getPersonalId(void) {return deviceId;};
-    inline uint32_t getNodePayload(int8_t id) {return message[id % MAX_NODES_NUM].payload;};
-    inline bool getNodeOrigin(int8_t id) {return origin[id % MAX_NODES_NUM] != 0;};
-    inline uint8_t getNodeCount(void) {return nodeCount;};
+    inline void setPayload(uint32_t data) {message[deviceId].payload = data;}
+    inline int8_t getPersonalId(void) {return deviceId;}
+    inline uint32_t getNodePayload(int8_t id) {return message[id % MAX_NODES_NUM].payload;}
+    inline bool getNodeOrigin(int8_t id) {return origin[id % MAX_NODES_NUM] != 0;}
+    inline uint8_t getNodeCount(void) {return nodeCount;}
+    inline bool getNodeState(int8_t id) {return activeNodes[id % MAX_NODES_NUM];}
     void getNodeIds(int8_t* ids, uint8_t maxLen = MAX_NODES_NUM);
     
   private:

@@ -79,7 +79,7 @@ void setup()
   framebuf.pushSprite(0, 0);
   digitalWrite(BACKLIGHT, 1);   // Backlight on
 
-  if(strtol(utils.getSerialNumber(), NULL, 0) == 0)
+  //if(strtol(utils.getSerialNumber(), NULL, 0) == 0)
   {
     i2cBus.begin(SDA, SCL, 400000U); 
     mfrc522.PCD_Init();		        // Init MFRC522
@@ -122,7 +122,7 @@ void loop()
     t = millis();
     update = false;
     uint32_t card = -1;
-    if(mesh.getPersonalId() == 0) card = getCardData();
+    /*if(mesh.getPersonalId() == 0)*/ card = getCardData();
     mesh.setPayload(card);
 
     framebuf.fillSprite(TFT_BLACK);

@@ -6,8 +6,7 @@
 
 bool Mailbox::begin(void)
 {
-  i2cBus.begin(pinNfcSda, pinNfcScl, 400000U); 
-  mfrc522.PCD_Init();		        // Init MFRC522
+  //initializeNfc();
 
   xTaskCreate(update, "task_mailbox", 2048, this, 1, NULL);
   return true;
@@ -28,8 +27,19 @@ void Mailbox::update(void* pvParameter)
   vTaskDelete(NULL);
 }
 
+void Mailbox::initializeNfc(void)
+{
+  if(!nfcInitialized)
+  {
+    i2cBus.begin(pinNfcSda, pinNfcScl, 400000U); 
+    mfrc522.PCD_Init();     // Init MFRC522
+    nfcInitialized = true;
+  }
+}
+
 uint32_t Mailbox::readCardData(void)
 {
+  if(!nfcInitialized) return 0xFFFFFFFF;
   uint8_t req_buff[2];
   uint8_t req_buff_size = sizeof(req_buff);
   mfrc522.PCD_StopCrypto1();
