@@ -2,6 +2,8 @@
 #include "console.h"
 #include "freertos/task.h"
 
+//#define log   DISABLE_MODULE_LEVEL
+
 void Hmi::begin(void)
 {
   digitalWrite(pinBuzzer, 0);
@@ -10,26 +12,13 @@ void Hmi::begin(void)
   led.updateLength(NUM_LEDS_STATUS + NUM_LEDS_RESULT + NUM_LEDS_NODE);
   led.clear();
   led.begin();
-
-  led.setPixelColor(0, led.Color(255, 0, 0));
-  led.setPixelColor(1, led.Color(0, 255, 0));
-  led.setPixelColor(2, led.Color(0, 0, 255));
   led.show();
 
-  int freq = 2000;
-  int channel = 1;
-  int resolution = 8;
+  ledcSetup(BUZZER_PWM_CHANNEL, 1000, 8);       // Channel, Frequency, Resolution
+  ledcAttachPin(pinBuzzer, BUZZER_PWM_CHANNEL);
+  ledcWriteTone(BUZZER_PWM_CHANNEL, 0);
 
-  ledcSetup(channel, freq, resolution);
-  ledcAttachPin(pinBuzzer, channel);
-
-  ledcWriteTone(channel, 800);
-  delay(200);
-  ledcWriteTone(channel, 1180);
-  delay(200);
-  ledcWriteTone(channel, 0);
-
-  xTaskCreate(update, "task_hmi", 2048, this, 1, NULL);
+  xTaskCreate(update, "task_hmi", 4096, this, 1, NULL);
 }
 
 void Hmi::setStatusIndicator(LedStatus status)
@@ -49,13 +38,39 @@ void Hmi::setNodeIndicator(int node, LedNode status)
 
 void Hmi::playSound(BuzzerSound sound)
 {
-  
+  buzzerSound = sound;
+  switch(buzzerSound)
+  {
+    case BUZZER_POWER_ON:
+      melody = TONE_POWER_ON;
+      melodyLength = sizeof(TONE_POWER_ON) / sizeof(Tone);
+      break;
+    case BUZZER_POWER_OFF:
+      melody = TONE_POWER_OFF;
+      melodyLength = sizeof(TONE_POWER_OFF) / sizeof(Tone);
+      break;
+    case BUZZER_SUCCESS:
+      melody = TONE_SUCCESS;
+      melodyLength = sizeof(TONE_SUCCESS) / sizeof(Tone);
+      break;
+    case BUZZER_ERROR:
+      melody = TONE_ERROR;
+      melodyLength = sizeof(TONE_ERROR) / sizeof(Tone);
+      break;
+    default:
+      melody = nullptr;
+      melodyLength = 0;
+      return;
+  }
+  playing = true;
 }
 
 
 void Hmi::update(void* pvParameter)
 {
   Hmi* ref = (Hmi*)pvParameter;
+  bool playing = false;
+  int32_t buzzerTimer = -1;
 
   while(true)
   {
@@ -72,8 +87,48 @@ void Hmi::update(void* pvParameter)
       case LED_RESULT_C: ref->led.setPixelColor(NUM_LEDS_STATUS + 2, ref->led.Color(255, 255, 255)); break;
       default: break;
     }
+    ref->led.show();
 
 
+    if(ref->playing != playing)
+    {
+      playing = ref->playing;
+      if(playing)
+      {
+        buzzerTimer = millis();
+      }
+      else
+      {
+        ledcWriteTone(BUZZER_PWM_CHANNEL, 0);   // Turn off buzzer
+        buzzerTimer = -1;
+        ref->buzzerSound = BUZZER_NONE;
+      }
+    }
+    if(buzzerTimer != -1)
+    {
+      static int freq = 0, freqOld = 0;
+      if(ref->playing && ref->melody != nullptr)
+      {
+        int i = 0, t = 0;
+        for(i = 0; i < ref->melodyLength; i++)
+        {
+          if(t >= millis() - buzzerTimer) break;
+          t += ref->melody[i].duration;
+          freq = ref->melody[i].freq;
+        }
+        if((i == ref->melodyLength) && (millis() - buzzerTimer > t))
+        {
+          buzzerTimer = -1;
+          ref->playing = false;
+        }
+        else if(freq != freqOld)
+        {
+          freqOld = freq;
+          ledcWriteTone(BUZZER_PWM_CHANNEL, freq);
+        }
+      }
+    }
+  
     vTaskDelayUntil(&task_last_tick, (const TickType_t) 1000 / TASK_HMI_FREQ);
   }
   vTaskDelete(NULL);

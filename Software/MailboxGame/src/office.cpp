@@ -33,7 +33,7 @@ void Office::update(void* pvParameter)
     TickType_t task_last_tick = xTaskGetTickCount();
 
     bool allCorrect = true;
-    ref->returnPayload = 0x00000000;                // Divided into 2-Bit node status segments: 00 = inactive, 01 = correct code, 10 = wrong code, 11 = undefined
+    ref->returnPayload = 0x00000000;                // Divided into 2-Bit node status segments: 00 = ignored node, 01 = disconnected, 10 = wrong code, 11 = correct code
     for(int i = 0; i < MAX_NODES_NUM; i++)
     {
       if(ref->mailboxStatus[i] != MAILBOX_IGNORED)  // Only care about valid mailboxes, unlisted IDs are ignored
@@ -44,15 +44,16 @@ void Office::update(void* pvParameter)
           ref->mailboxStatus[i] = ref->mesh.getNodePayload(i) == -1? MAILBOX_CONNECTED : MAILBOX_ACTIVE;
         }
 
-        if(ref->mesh.getNodePayload(i) == ref->mailboxCompareCode[i])   // Check if received card number matches with reference
+        bool nodeCorrect = ref->mesh.getNodePayload(i) == ref->mailboxCompareCode[i];   // Check if received card number matches with reference
+        if(ref->mailboxStatus[i] == MAILBOX_ACTIVE)
         {
-          ref->returnPayload |= 0x01 << i * 2;
+          ref->returnPayload |= (nodeCorrect? 0x03 : 0x02) << i * 2;
         }
         else
         {
-          ref->returnPayload |= 0x02 << i * 2;
-          allCorrect = false;                                       // Found at least one card that is worng
+          ref->returnPayload |= 0x01 << i * 2;                      // Shows that node has not yet joined the network
         }
+        allCorrect &= nodeCorrect;
       }
     }
     ref->returnPayload |= allCorrect? 0x80000000 : 0x00000000;      // MSB is set in payload if all cards are correct -> game finished
@@ -63,8 +64,8 @@ void Office::update(void* pvParameter)
       case OFFICE_READY:
         if(allCorrect)
         {
-          // TODO: Show correct answer
           ref->hmi.setResultIndicator(ref->solution);
+          ref->hmi.playSound(Hmi::BUZZER_SUCCESS);
           ref->officeState = OFFICE_WIN;
         }
         break;
@@ -198,9 +199,9 @@ bool Office::loadOfficeFile(const char* path)
   }
   switch(doc["solution"].as<const char*>()[0])
   {
-    case 'A': solution = Hmi::LED_RESULT_A; break;
-    case 'B': solution = Hmi::LED_RESULT_B; break;
-    case 'C': solution = Hmi::LED_RESULT_C; break;
+    case 'a': case 'A': solution = Hmi::LED_RESULT_A; break;
+    case 'b': case 'B': solution = Hmi::LED_RESULT_B; break;
+    case 'c': case 'C': solution = Hmi::LED_RESULT_C; break;
     default:  solution = Hmi::LED_RESULT_NONE; break;
   }
   file.close();

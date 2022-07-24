@@ -35,7 +35,13 @@ void setup()
   console.begin();
   sys.begin(10);   // Set Watchdog Timout to 10s
   hmi.begin();
-  utils.begin("DRIVE");
+  hmi.playSound(Hmi::BUZZER_POWER_ON);
+  if(!utils.begin("DRIVE"))
+  {
+    console.error.println("[MAIN] Could not initialize utilities");
+    hmi.setStatusIndicator(Hmi::LED_STATUS_ERROR);
+    hmi.playSound(Hmi::BUZZER_ERROR);
+  }
 
   int id = strtol(utils.getSerialNumber(), NULL, 0);
   mesh.begin(id);
@@ -48,6 +54,7 @@ void setup()
     {
       console.error.println("[MAIN] Could not start Post Office");
       hmi.setStatusIndicator(Hmi::LED_STATUS_ERROR);
+      hmi.playSound(Hmi::BUZZER_ERROR);
     }
   }
   else
@@ -58,31 +65,20 @@ void setup()
     {
       console.error.println("[MAIN] Could not start Mailbox");
       hmi.setStatusIndicator(Hmi::LED_STATUS_ERROR);
+      hmi.playSound(Hmi::BUZZER_ERROR);
     }
   }
 }
 
 void loop()
 {
-  sys.feedWatchdog();
-  delay(100);
+  static bool btn = true;
+  if(!digitalRead(USER_BTN) && btn)
+  {
 
-/*
-  static bool update = true;
-  static uint8_t nodeCount = 0;
-  if(mesh.getNodeCount() != nodeCount)
-  {
-    nodeCount = mesh.getNodeCount();
-    update = true;
   }
-  
-  static int t = 0;
-  if(millis() - t > 100 || update)
-  {
-    t = millis();
-    update = false;
-    uint32_t card = -1;
-    if(mesh.getPersonalId() == 0) card = getCardData();
-    mesh.setPayload(card);
-  */
+  btn = digitalRead(USER_BTN);
+
+  sys.feedWatchdog();
+  delay(50);
 }
