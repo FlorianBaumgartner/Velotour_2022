@@ -8,14 +8,14 @@
 #define NUM_LEDS_RESULT           3
 #define NUM_LEDS_NODE             10
 
-#define TASK_HMI_FREQ             10            // [Hz]
+#define TASK_HMI_FREQ             20            // [Hz]
 
 
 class Hmi
 {
   public:
     enum LedStatus {LED_STATUS_BUSY, LED_STATUS_OK, LED_STATUS_ERROR};
-    enum LedResult {LED_RESULT_OFF, LED_RESULT_A, LED_RESULT_B, LED_RESULT_C};
+    enum LedResult {LED_RESULT_NONE, LED_RESULT_A, LED_RESULT_B, LED_RESULT_C};
     enum LedNode {LED_NODE_DISCONNECTED, LED_NODE_CONNECTED};
     enum BuzzerSound {BUZZER_POWER_ON, BUZZER_POWER_OFF, BUZZER_SUCCESS};
 
@@ -31,7 +31,7 @@ class Hmi
     int pinLed, pinBuzzer;
     Adafruit_NeoPixel led;
     LedStatus statusIndicator = LED_STATUS_BUSY;
-    LedResult resultIndicator = LED_RESULT_OFF;
+    LedResult resultIndicator = LED_RESULT_NONE;
     LedNode nodeIndicator[NUM_LEDS_NODE];
 
     static void update(void* pvParameter);

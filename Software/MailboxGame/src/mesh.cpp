@@ -31,13 +31,13 @@ void Mesh::begin(int id)
   WiFi.disconnect();
   if (esp_now_init() == ESP_OK)             // Startup ESP Now
   {
-    console.ok.println("[Mesh] ESPNow Init Success");
+    console.ok.println("[MESH] ESPNow Init Success");
     esp_now_register_recv_cb(receiveCallback);
     esp_now_register_send_cb(sentCallback);
   }
   else
   {
-    console.error.println("[Mesh] ESPNow Init Failed");
+    console.error.println("[MESH] ESPNow Init Failed");
     restart();
   }
 
@@ -92,7 +92,7 @@ void Mesh::update(void *pvParameter)
     }
     else
     {
-      console.warning.printf("[Mesh] Own Node ID (%d) is out of index (Max. %d)\n", ref->deviceId, MAX_NODES_NUM);
+      console.warning.printf("[MESH] Own Node ID (%d) is out of index (Max. %d)\n", ref->deviceId, MAX_NODES_NUM);
     }
 
     Message messagesToSend[MAX_NODES_NUM];
@@ -110,7 +110,7 @@ void Mesh::update(void *pvParameter)
           messagesToSend[messagesToSendCount].origin = (i == ref->deviceId);  // Clear origin flag for relayed messages
           messagesToSendCount++;
         }
-        console.log.printf("[Mesh] System Time: %d, Node %d (LifeTimeRef: %04X): ", millis(), ref->message[i].id, ref->message[i].lifetimeRef);
+        console.log.printf("[MESH] System Time: %d, Node %d (LifeTimeRef: %04X): ", millis(), ref->message[i].id, ref->message[i].lifetimeRef);
         if(i == ref->deviceId)                  // Check if own node id is present
         {
           console.log.printf("Own Node\n");
@@ -130,7 +130,7 @@ void Mesh::update(void *pvParameter)
 
     if(ref->nodeCount > 0)
     {
-      console.log.print("[Mesh] Send node IDs: [");
+      console.log.print("[MESH] Send node IDs: [");
       for(int i = 0; i < ref->nodeCount; i++)
       {
         console.log.printf("%d", messagesToSend[i].id);
@@ -149,7 +149,7 @@ void Mesh::update(void *pvParameter)
     }
     else
     {
-      console.warning.println("[Mesh] No node data to send (not even own node data - this should no happen)");
+      console.warning.println("[MESH] No node data to send (not even own node data - this should no happen)");
     }
 
     vTaskDelayUntil(&task_last_tick, (const TickType_t) 1000 / TASK_MESH_FREQ);
@@ -161,7 +161,7 @@ void Mesh::sentCallback(const uint8_t *macAddr, esp_now_send_status_t status)
 {
   if(status != ESP_NOW_SEND_SUCCESS)
   {
-    console.error.println("[Mesh] Could not send data (ESP-NOW Error) -> Reset");
+    console.error.println("[MESH] Could not send data (ESP-NOW Error) -> Reset");
     delay(100);
     meshPtr->restart();
   }
@@ -175,7 +175,7 @@ void Mesh::receiveCallback(const uint8_t *macAddr, const uint8_t *data, int data
   memcpy(buffer, data, msgLen);
   int nodeCount = msgLen / sizeof(Message);
   bool receivedOwnId = false;
-  console.log.printf("[Mesh] Received Node Count: %d\n", nodeCount);
+  console.log.printf("[MESH] Received Node Count: %d\n", nodeCount);
   for(int i = 0; i < nodeCount; i++)
   {
     Message* msg = (Message*) &buffer[i * sizeof(Message)];
@@ -193,7 +193,7 @@ void Mesh::receiveCallback(const uint8_t *macAddr, const uint8_t *data, int data
       }
       else
       {
-        console.warning.printf("[Mesh] Received Node ID (%d) is out of index (Max. %d)\n", msg->id, MAX_NODES_NUM);
+        console.warning.printf("[MESH] Received Node ID (%d) is out of index (Max. %d)\n", msg->id, MAX_NODES_NUM);
       }
     }
     else
@@ -210,7 +210,7 @@ void Mesh::receiveCallback(const uint8_t *macAddr, const uint8_t *data, int data
     noReplyCount++;
     if(noReplyCount > NO_REPLY_THRESHOLD)
     {
-      console.warning.println("[Mesh] Didn't receive own node data (is this node even transmitting?) -> Reset");
+      console.warning.println("[MESH] Didn't receive own node data (is this node even transmitting?) -> Reset");
       delay(100);
       meshPtr->restart();
     }

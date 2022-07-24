@@ -7,7 +7,16 @@
 
 bool Office::begin(void)
 {
-  loadMailboxFile("office.json");
+  if(!loadMailboxFile("cards.json"))
+  {
+    console.error.println("[OFFICE] Could not read cards configuration file");
+    return false;
+  }
+  if(!loadOfficeFile("office.json"))
+  {
+    console.error.println("[OFFICE] Could not read office configuration file");
+    return false;
+  }
 
   xTaskCreate(update, "task_office", 2048, this, 1, NULL);
   return true;
@@ -23,21 +32,51 @@ void Office::update(void* pvParameter)
   {
     TickType_t task_last_tick = xTaskGetTickCount();
 
+    bool allCorrect = true;
+    ref->returnPayload = 0x00000000;                // Divided into 2-Bit node status segments: 00 = inactive, 01 = correct code, 10 = wrong code, 11 = undefined
     for(int i = 0; i < MAX_NODES_NUM; i++)
     {
-      if(ref->mailboxStatus[i] != MAILBOX_IGNORED)  // Update connection status of mailboxes
+      if(ref->mailboxStatus[i] != MAILBOX_IGNORED)  // Only care about valid mailboxes, unlisted IDs are ignored
       {
         ref->mailboxStatus[i] = MAILBOX_DISCONNECTED;
-        if(ref->mesh.getNodeState(i))       // Check if node is present in network
+        if(ref->mesh.getNodeState(i))               // Check if node is present in network
         {
           ref->mailboxStatus[i] = ref->mesh.getNodePayload(i) == -1? MAILBOX_CONNECTED : MAILBOX_ACTIVE;
         }
-      }
 
+        if(ref->mesh.getNodePayload(i) == ref->mailboxCompareCode[i])   // Check if received card number matches with reference
+        {
+          ref->returnPayload |= 0x01 << i * 2;
+        }
+        else
+        {
+          ref->returnPayload |= 0x02 << i * 2;
+          allCorrect = false;                                       // Found at least one card that is worng
+        }
+      }
+    }
+    ref->returnPayload |= allCorrect? 0x80000000 : 0x00000000;      // MSB is set in payload if all cards are correct -> game finished
+    ref->mesh.setPayload(ref->returnPayload);                       // Send game info back to all mailboxes
+
+    switch(ref->officeState)
+    {
+      case OFFICE_READY:
+        if(allCorrect)
+        {
+          // TODO: Show correct answer
+          ref->hmi.setResultIndicator(ref->solution);
+          ref->officeState = OFFICE_WIN;
+        }
+        break;
+      case OFFICE_WIN:
+          // TODO: Wait on button to turn off or timeout
+        break;
+      case OFFICE_POWERDOWN:
+          // TODO: Start Shutdown process
+        break;
     }
 
-
-    if(millis() - printTimer > PRINT_INTERVAL)
+    if((millis() - printTimer > PRINT_INTERVAL) && millis() > 10000)
     {
       printTimer = millis();
       ref->printInfo();
@@ -128,6 +167,44 @@ bool Office::loadMailboxFile(const char* path)
     mailboxCompareCode[i] = strtoul(kv.value().as<const char*>(), NULL, 0);
   }
   file.close();
-  console.ok.println("[OFFICE] Configuration loaded and parsed successfully");
+  console.ok.println("[OFFICE] Mailbox File loaded and parsed successfully");
+  return true;
+}
+
+bool Office::loadOfficeFile(const char* path)
+{
+  File file = fatfs.open(path);
+
+  if(!file)
+  {
+    console.error.println("[OFFICE] Open file failed");
+    return false;
+  }
+
+  StaticJsonDocument<1024> doc;
+  DeserializationError error = deserializeJson(doc, file);
+  if(error)
+  {
+    file.close();
+    console.error.printf("[OFFICE] Failed to read file, using default configuration: %d\n", error);
+    return false;
+  }
+  JsonObject root = doc.as<JsonObject>();
+  if(!doc.containsKey("solution"))
+  {
+    console.error.println("[OFFICE] JSON File does not contain key ""solution""");
+    solution = Hmi::LED_RESULT_NONE;
+    return false;
+  }
+  switch(doc["solution"].as<const char*>()[0])
+  {
+    case 'A': solution = Hmi::LED_RESULT_A; break;
+    case 'B': solution = Hmi::LED_RESULT_B; break;
+    case 'C': solution = Hmi::LED_RESULT_C; break;
+    default:  solution = Hmi::LED_RESULT_NONE; break;
+  }
+  file.close();
+  console.log.printf("[OFFICE] Correct Solution: %c\n", 'A' + solution - 1);
+  console.ok.println("[OFFICE] Office Configuration loaded and parsed successfully");
   return true;
 }

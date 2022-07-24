@@ -44,13 +44,21 @@ void setup()
   {
     console.log.println("[MAIN] Device has ID 0 -> Start Post Office");
     Office office(sys, hmi, mesh);
-    office.begin();
+    if(!office.begin())
+    {
+      console.error.println("[MAIN] Could not start Post Office");
+      hmi.setStatusIndicator(Hmi::LED_STATUS_ERROR);
+    }
   }
   else
   {
     console.log.printf("[MAIN] Device has ID %d -> Start Mailbox\n", id);
     Mailbox mailbox(NFC_RST, NFC_IRQ, NFC_SCL, NFC_SDA, sys, hmi, mesh);
-    //mailbox.begin();
+    if(!mailbox.begin())
+    {
+      console.error.println("[MAIN] Could not start Mailbox");
+      hmi.setStatusIndicator(Hmi::LED_STATUS_ERROR);
+    }
   }
 }
 

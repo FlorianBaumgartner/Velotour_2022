@@ -32,6 +32,27 @@ void Hmi::begin(void)
   xTaskCreate(update, "task_hmi", 2048, this, 1, NULL);
 }
 
+void Hmi::setStatusIndicator(LedStatus status)
+{
+  statusIndicator = status;
+}
+
+void Hmi::setResultIndicator(LedResult result)
+{
+  resultIndicator = result;
+}
+
+void Hmi::setNodeIndicator(int node, LedNode status)
+{
+  nodeIndicator[node % NUM_LEDS_NODE] = status;
+}
+
+void Hmi::playSound(BuzzerSound sound)
+{
+  
+}
+
+
 void Hmi::update(void* pvParameter)
 {
   Hmi* ref = (Hmi*)pvParameter;
@@ -39,6 +60,18 @@ void Hmi::update(void* pvParameter)
   while(true)
   {
     TickType_t task_last_tick = xTaskGetTickCount();
+
+    for(int i = 0; i < NUM_LEDS_RESULT; i++)
+    {
+      ref->led.setPixelColor(NUM_LEDS_STATUS + i, 0);
+    }
+    switch(ref->resultIndicator)
+    {
+      case LED_RESULT_A: ref->led.setPixelColor(NUM_LEDS_STATUS + 0, ref->led.Color(255, 255, 255)); break;
+      case LED_RESULT_B: ref->led.setPixelColor(NUM_LEDS_STATUS + 1, ref->led.Color(255, 255, 255)); break;
+      case LED_RESULT_C: ref->led.setPixelColor(NUM_LEDS_STATUS + 2, ref->led.Color(255, 255, 255)); break;
+      default: break;
+    }
 
 
     vTaskDelayUntil(&task_last_tick, (const TickType_t) 1000 / TASK_HMI_FREQ);
