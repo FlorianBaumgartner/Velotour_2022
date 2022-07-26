@@ -31,9 +31,15 @@ void Hmi::setResultIndicator(LedResult result)
   resultIndicator = result;
 }
 
-void Hmi::setNodeIndicator(int node, LedNode status)
+void Hmi::setMode(LedMode mode)
 {
-  nodeIndicator[node % NUM_LEDS_NODE] = status;
+   ledMode = mode;
+   ledModeTimer = millis();
+}
+
+void Hmi::setNodeStatus(int node, NodeStatus status)
+{
+  nodeStatus[node % NUM_LEDS_NODE] = status;
 }
 
 void Hmi::playSound(BuzzerSound sound)
@@ -76,6 +82,24 @@ void Hmi::update(void* pvParameter)
   {
     TickType_t task_last_tick = xTaskGetTickCount();
 
+    // Status LED
+    uint8_t breathing = map(abs((int)(millis() % 3000) - 1500), 0, 1500, 0, 255);
+    switch(ref->statusIndicator)
+    {
+      case LED_STATUS_OK:
+        ref->led.setPixelColor(0, ref->led.Color(0, 255, 0));   // Green steady
+        break;
+      case LED_STATUS_BUSY:
+        ref->led.setPixelColor(0, ref->led.Color(gamma[breathing], gamma[breathing], gamma[breathing]));    // White breathing
+        break;
+      case LED_STATUS_ERROR:
+        ref->led.setPixelColor(0, ref->led.Color((millis() % 400) > 200? 255 : 0, 0, 0));   // Red blinking
+        break;
+      default:
+        ref->led.setPixelColor(0, 0);
+    }
+
+    // Result LEDs
     for(int i = 0; i < NUM_LEDS_RESULT; i++)
     {
       ref->led.setPixelColor(NUM_LEDS_STATUS + i, 0);
@@ -86,6 +110,39 @@ void Hmi::update(void* pvParameter)
       case LED_RESULT_B: ref->led.setPixelColor(NUM_LEDS_STATUS + 1, ref->led.Color(255, 255, 255)); break;
       case LED_RESULT_C: ref->led.setPixelColor(NUM_LEDS_STATUS + 2, ref->led.Color(255, 255, 255)); break;
       default: break;
+    }
+
+    // Animation / Network LEDs
+    for(int i = 0; i < NUM_LEDS_NODE; i++)
+    {
+      uint8_t l = NUM_LEDS_STATUS + NUM_LEDS_RESULT + i;
+      switch(ref->ledMode)
+      {
+        case LED_MODE_OFF:
+          ref->led.setPixelColor(l, 0);
+          break;
+        case LED_MODE_POWER_ON:
+          
+          break;
+        case LED_MODE_POWER_OFF:
+          break;
+        case LED_MODE_SUCCESS:
+          ref->led.setPixelColor(l, ref->led.Color(0, (millis() % 400) > 200? 255 : 0, 0));   // Green blinking
+          break;
+        case LED_MODE_CARD_INSERTED:
+          break;
+        case LED_MODE_NODE_STATUS:
+          ref->led.setPixelColor(l, 0);   // LED OFF per default
+          if(ref->nodeStatus[i] == NODE_ACTIVE)
+          {
+            ref->led.setPixelColor(l, ref->led.Color(0, 255, 0));     // Green steady
+          }
+          else if(ref->nodeStatus[i] == NODE_CONNECTED)
+          {
+            ref->led.setPixelColor(l, ref->led.Color(255, 255, 0));   // Yellow steady
+          }
+          break;
+      }
     }
     ref->led.show();
 
