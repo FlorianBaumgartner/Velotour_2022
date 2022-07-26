@@ -34,7 +34,8 @@ void Hmi::setResultIndicator(LedResult result)
 void Hmi::setMode(LedMode mode)
 {
    ledMode = mode;
-   ledModeTimer = millis();
+   animationRunning = true;
+   animationTimer = millis();
 }
 
 void Hmi::setNodeStatus(int node, NodeStatus status)
@@ -83,14 +84,14 @@ void Hmi::update(void* pvParameter)
     TickType_t task_last_tick = xTaskGetTickCount();
 
     // Status LED
-    uint8_t breathing = map(abs((int)(millis() % 3000) - 1500), 0, 1500, 0, 255);
+    uint8_t breathing = ref->gamma[map(abs((int)(millis() % 3000) - 1500), 0, 1500, 0, 255)];
     switch(ref->statusIndicator)
     {
       case LED_STATUS_OK:
         ref->led.setPixelColor(0, ref->led.Color(0, 255, 0));   // Green steady
         break;
       case LED_STATUS_BUSY:
-        ref->led.setPixelColor(0, ref->led.Color(gamma[breathing], gamma[breathing], gamma[breathing]));    // White breathing
+        ref->led.setPixelColor(0, ref->led.Color(breathing, breathing, breathing));    // White breathing
         break;
       case LED_STATUS_ERROR:
         ref->led.setPixelColor(0, ref->led.Color((millis() % 400) > 200? 255 : 0, 0, 0));   // Red blinking
@@ -118,20 +119,51 @@ void Hmi::update(void* pvParameter)
       uint8_t l = NUM_LEDS_STATUS + NUM_LEDS_RESULT + i;
       switch(ref->ledMode)
       {
-        case LED_MODE_OFF:
-          ref->led.setPixelColor(l, 0);
-          break;
         case LED_MODE_POWER_ON:
-          
+          if(ref->animationRunning)
+          {
+            int j = (millis() - ref->animationTimer) / 100;
+            uint8_t c = abs(i * 10 - 45) / 10 <= j? 255 : 0;
+            ref->led.setPixelColor(l, ref->led.Color(c, c, c));
+            if(j > 12) ref->animationRunning = false;
+          }
+          else
+          {
+            ref->ledMode = LED_MODE_OFF;
+          }
           break;
         case LED_MODE_POWER_OFF:
-          break;
-        case LED_MODE_SUCCESS:
-          ref->led.setPixelColor(l, ref->led.Color(0, (millis() % 400) > 200? 255 : 0, 0));   // Green blinking
+          if(ref->animationRunning)
+          {
+            int j = (millis() - ref->animationTimer) / 100;
+            uint8_t c = 4 - abs(i * 10 - 45) / 10 <= j? 255 : 0;
+            ref->led.setPixelColor(l, ref->led.Color(c, c, c));
+            if(j > 12) ref->animationRunning = false;
+          }
+          else
+          {
+            ref->ledMode = LED_MODE_OFF;
+          }
           break;
         case LED_MODE_CARD_INSERTED:
+          if(ref->animationRunning)
+          {
+            int j = (millis() - ref->animationTimer) / 100;
+            uint8_t c = (millis() % 400) > 200? 255 : 0;
+            ref->led.setPixelColor(l, ref->led.Color(c, c, c));     // White blinking for 2s
+            if(j > 20) ref->animationRunning = false;
+          }
+          else
+          {
+            ref->ledMode = LED_MODE_OFF;
+          }
+          break;
+        case LED_MODE_SUCCESS:
+          ref->animationRunning = false;
+          ref->led.setPixelColor(l, ref->led.Color(0, (millis() % 400) > 200? 255 : 0, 0));   // Green blinking
           break;
         case LED_MODE_NODE_STATUS:
+          ref->animationRunning = false;
           ref->led.setPixelColor(l, 0);   // LED OFF per default
           if(ref->nodeStatus[i] == NODE_ACTIVE)
           {
@@ -141,6 +173,10 @@ void Hmi::update(void* pvParameter)
           {
             ref->led.setPixelColor(l, ref->led.Color(255, 255, 0));   // Yellow steady
           }
+          break;
+        case LED_MODE_OFF:
+          ref->animationRunning = false;
+          ref->led.setPixelColor(l, 0);
           break;
       }
     }
