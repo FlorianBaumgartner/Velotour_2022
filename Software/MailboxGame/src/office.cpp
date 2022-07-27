@@ -59,21 +59,30 @@ void Office::update(void* pvParameter)
     ref->returnPayload |= allCorrect? 0x80000000 : 0x00000000;      // MSB is set in payload if all cards are correct -> game finished
     ref->mesh.setPayload(ref->returnPayload);                       // Send game info back to all mailboxes
 
-    switch(ref->officeState)
+    switch(ref->state)
     {
-      case OFFICE_READY:
+      case STATE_READY:
         if(allCorrect)
         {
           ref->hmi.setResultIndicator(ref->solution);
           ref->hmi.playSound(Hmi::BUZZER_SUCCESS);
-          ref->officeState = OFFICE_WIN;
+          ref->state = STATE_WIN;
+          ref->stateTimer = millis();
         }
         break;
-      case OFFICE_WIN:
-          // TODO: Wait on button to turn off or timeout
+      case STATE_WIN:
+        if(ref->sys.getButtonState() || (millis() - ref->stateTimer > SUCCESS_STATE_TIMEOUT * 1000))
+        {
+          ref->hmi.setResultIndicator(Hmi::LED_RESULT_NONE);
+          ref->hmi.playSound(Hmi::BUZZER_POWER_OFF);
+          ref->state = STATE_POWERDOWN;
+        }
         break;
-      case OFFICE_POWERDOWN:
-          // TODO: Start Shutdown process
+      case STATE_POWERDOWN:
+        if(ref->hmi.getMode() == Hmi::LED_MODE_OFF)
+        {
+          ref->sys.powerDown();
+        }
         break;
     }
 

@@ -18,7 +18,7 @@ class Hmi
     enum LedResult {LED_RESULT_NONE, LED_RESULT_A, LED_RESULT_B, LED_RESULT_C};
     enum LedMode {LED_MODE_OFF, LED_MODE_POWER_ON, LED_MODE_POWER_OFF, LED_MODE_SUCCESS, LED_MODE_CARD_INSERTED, LED_MODE_NODE_STATUS};
     enum NodeStatus {NODE_DISCONNECTED, NODE_CONNECTED, NODE_ACTIVE};   // Active means, node is connected and card has been inserted
-    enum BuzzerSound {BUZZER_NONE, BUZZER_POWER_ON, BUZZER_POWER_OFF, BUZZER_SUCCESS, BUZZER_ERROR};    // TODO: Add sound for Card inserted and card removed
+    enum BuzzerSound {BUZZER_NONE, BUZZER_CARD_INSERTED, BUZZER_CARD_REMOVED, BUZZER_POWER_ON, BUZZER_POWER_OFF, BUZZER_SUCCESS, BUZZER_ERROR};
    
 
     Hmi(int pinLed, int pinBuzzer): pinLed(pinLed), pinBuzzer(pinBuzzer) {}
@@ -26,6 +26,7 @@ class Hmi
     void setStatusIndicator(LedStatus status);
     void setResultIndicator(LedResult result);
     void setMode(LedMode mode);
+    LedMode getMode(void) {return ledMode;}
     void setNodeStatus(int node, NodeStatus status);
     void playSound(BuzzerSound sound);
 
@@ -53,6 +54,8 @@ class Hmi
 
     const Tone TONE_POWER_ON[4] = {{784, 120}, {0, 20}, {1175, 120}, {0, 20}};
     const Tone TONE_POWER_OFF[4] = {{1175, 120}, {0, 20}, {784, 120}, {0, 20}};
+    const Tone TONE_CARD_INSERTED[4] = {{1175, 120}, {0, 20}, {1175, 120}, {0, 20}};
+    const Tone TONE_CARD_REMOVED[1] = {784, 300};
     const Tone TONE_SUCCESS[4] = {{784, 150}, {988, 150}, {1175, 150}, {1568, 150}};
     const Tone TONE_ERROR[8] = {{784, 300}, {0, 300}, {784, 300}, {0, 300}, {784, 300}, {0, 300}, {784, 300}, {0, 300}};
 

@@ -33,8 +33,9 @@ void setup()
 {
   pinMode(USER_BTN, INPUT_PULLUP);
   console.begin();
-  sys.begin(10);   // Set Watchdog Timout to 10s
+  sys.begin(10);        // Set Watchdog Timout to 10s
   hmi.begin();
+  hmi.setMode(Hmi::LED_MODE_POWER_ON);
   hmi.playSound(Hmi::BUZZER_POWER_ON);
   if(!utils.begin("DRIVE"))
   {
@@ -78,6 +79,13 @@ void loop()
 
   }
   btn = digitalRead(USER_BTN);
+
+  float soc = sys.getBatteryPercentage();
+  if(soc < 10.0)
+  {
+    console.error.printf("Low Battery! (%.1f%%)\n", soc);
+    sys.powerDown();
+  }
 
   sys.feedWatchdog();
   delay(50);

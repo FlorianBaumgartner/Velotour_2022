@@ -10,6 +10,9 @@ class System
     void begin(uint32_t watchdogTimeout = 0);
     void startWatchdog(uint32_t seconds);
     void feedWatchdog(void);
+    void powerDown(void);
+    bool getButtonState(void);
+    float getBatteryPercentage(void);
 
   private:
     const int pinPowerOff;

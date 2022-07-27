@@ -4,6 +4,10 @@
 
 void System::begin(uint32_t watchdogTimeout)
 {
+  digitalWrite(pinPowerOff, 0);
+  pinMode(pinPowerButton, OUTPUT);
+  pinMode(pinPowerButton, INPUT_PULLUP);
+  pinMode(pinBatMsr, INPUT);
   if(watchdogTimeout > 0)
   {
     startWatchdog(watchdogTimeout);
@@ -21,4 +25,22 @@ void System::startWatchdog(uint32_t seconds)
 void System::feedWatchdog(void)
 {
   esp_task_wdt_reset();
+}
+
+void System::powerDown(void)
+{
+  console.log.println("Power down systrem...");
+  delay(10);
+  digitalWrite(pinPowerOff, 1);
+  while(true) yield();
+}
+
+bool System::getButtonState(void)
+{
+  return !digitalRead(pinPowerButton);
+}
+
+float System::getBatteryPercentage(void)
+{
+  return 100.0;  // TODO: Add Li-Ion battery measurement
 }

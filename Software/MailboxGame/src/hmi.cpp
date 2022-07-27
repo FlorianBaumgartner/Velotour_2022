@@ -56,6 +56,14 @@ void Hmi::playSound(BuzzerSound sound)
       melody = TONE_POWER_OFF;
       melodyLength = sizeof(TONE_POWER_OFF) / sizeof(Tone);
       break;
+    case BUZZER_CARD_INSERTED:
+      melody = TONE_CARD_INSERTED;
+      melodyLength = sizeof(TONE_CARD_INSERTED) / sizeof(Tone);
+      break;
+    case BUZZER_CARD_REMOVED:
+      melody = TONE_CARD_REMOVED;
+      melodyLength = sizeof(TONE_CARD_REMOVED) / sizeof(Tone);
+      break;
     case BUZZER_SUCCESS:
       melody = TONE_SUCCESS;
       melodyLength = sizeof(TONE_SUCCESS) / sizeof(Tone);

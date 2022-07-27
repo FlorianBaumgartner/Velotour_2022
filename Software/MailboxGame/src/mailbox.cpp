@@ -21,6 +21,39 @@ void Mailbox::update(void* pvParameter)
   {
     TickType_t task_last_tick = xTaskGetTickCount();
 
+    uint8_t nodeStatus = ref->mesh.getNodePayload(0) >> ref->mesh.getPersonalId() & 0x03;
+    bool allCorrect = (ref->mesh.getNodePayload(0) & 0x80000000) && ref->mesh.getNodeState(0);
+    uint32_t card = ref->readCardData();
+    ref->mesh.setPayload(card);
+
+    switch(ref->state)
+    {
+      case STATE_READY:
+        if(card != -1)
+        {
+          ref->hmi.setMode(Hmi::LED_MODE_CARD_INSERTED);
+          ref->hmi.playSound(Hmi::BUZZER_CARD_INSERTED);
+          ref->state = STATE_ACTIVE;
+        }
+        break;
+      case STATE_ACTIVE:
+        if(card == -1)
+        {
+          ref->hmi.playSound(Hmi::BUZZER_CARD_REMOVED);
+          ref->state = STATE_READY;
+        }
+        if(allCorrect)
+        {
+          ref->hmi.playSound(Hmi::BUZZER_SUCCESS);
+          ref->state = STATE_WIN;
+        }
+        break;
+      case STATE_WIN:
+        // TODO: Wait until node 0 disconnected or timeout
+        break;
+      case STATE_POWERDOWN:
+        break;
+    }
 
     vTaskDelayUntil(&task_last_tick, (const TickType_t) 1000 / TASK_MAILBOX_FREQ);
   }

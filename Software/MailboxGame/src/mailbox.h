@@ -12,22 +12,24 @@
 class Mailbox
 {
   public:
-    Mailbox(int pinNfcRst, int pinNfcIrq, int pinNfcScl, int pinNfcSda, System& system, Hmi& hmi, Mesh& mesh): pinNfcRst(pinNfcRst),
-                                                                                                               pinNfcIrq(pinNfcIrq),
-                                                                                                               pinNfcScl(pinNfcScl),
-                                                                                                               pinNfcSda(pinNfcSda),
-                                                                                                               system(system),
-                                                                                                               hmi(hmi),
-                                                                                                               mesh(mesh) {}
+    Mailbox(int pinNfcRst, int pinNfcIrq, int pinNfcScl, int pinNfcSda, System& sys, Hmi& hmi, Mesh& mesh): pinNfcRst(pinNfcRst),
+                                                                                                            pinNfcIrq(pinNfcIrq),
+                                                                                                            pinNfcScl(pinNfcScl),
+                                                                                                            pinNfcSda(pinNfcSda),
+                                                                                                            sys(sys),
+                                                                                                            hmi(hmi),
+                                                                                                            mesh(mesh) {}
     bool begin(void);
 
   private:
+    enum State {STATE_READY, STATE_ACTIVE, STATE_WIN, STATE_POWERDOWN};
+
     const int pinNfcRst;
     const int pinNfcIrq;
     const int pinNfcScl;
     const int pinNfcSda;
 
-    System& system;
+    System& sys;
     Hmi& hmi;
     Mesh& mesh;
 
@@ -36,6 +38,8 @@ class Mailbox
     TwoWire i2cBus = TwoWire(0);
     MFRC522_I2C dev = MFRC522_I2C(pinNfcRst, devAddr, i2cBus);
     MFRC522 mfrc522 = MFRC522(&dev);
+    State state = STATE_READY;
+    
 
     static void update(void* pvParameter);
     void initializeNfc(void);
