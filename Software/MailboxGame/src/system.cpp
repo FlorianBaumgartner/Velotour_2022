@@ -2,6 +2,9 @@
 #include "console.h"
 #include "esp_task_wdt.h"
 
+//#define log   DISABLE_MODULE_LEVEL
+#define DISABLE_BATTERY_MEASUREMENT
+
 void System::begin(uint32_t watchdogTimeout)
 {
   digitalWrite(pinPowerOff, 0);
@@ -29,7 +32,7 @@ void System::feedWatchdog(void)
 
 void System::powerDown(void)
 {
-  console.log.println("Power down systrem...");
+  console.log.println("[SYSTEM] Power down systrem...");
   delay(10);
   digitalWrite(pinPowerOff, 1);
   while(true) yield();
@@ -40,7 +43,25 @@ bool System::getButtonState(void)
   return !digitalRead(pinPowerButton);
 }
 
-float System::getBatteryPercentage(void)
+uint8_t System::getBatteryPercentage(void)
 {
-  return 100.0;  // TODO: Add Li-Ion battery measurement
+  #ifdef DISABLE_BATTERY_MEASUREMENT
+    return 100;
+  #endif
+
+  float voltage = 0.0;
+  for(int i = 0; i < MEASUREMENT_AVR_NUM; i++)
+  {
+    voltage += analogRead(pinBatMsr);
+  }
+  voltage /= (float)MEASUREMENT_AVR_NUM;
+  voltage /= (float)MEASUREMENT_FACTOR;
+  
+  uint16_t soc = 0;
+  for (soc = 0; soc <= 100; soc++)
+  {
+    if (voltage >= batteryVoltagePercentage[soc]) break;
+  }
+  console.log.printf("[SYSTEM] Battery Measurement: %.2f V (%d%%)\n", voltage, max(100 - soc, 0));
+  return max(100 - soc, 0);
 }

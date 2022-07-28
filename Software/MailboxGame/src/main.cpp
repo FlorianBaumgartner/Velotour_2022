@@ -23,6 +23,10 @@
 #define SYS_LED           40    // 45
 #define SYS_BZR           4     // 46
 
+#define WATCHDOG_TIMEOUT  10    // [s]
+#define LOW_BATTERY_SOC   30    // [%]
+#define MIN_BATTERY_SOC   10    // [%]
+
 
 Mesh mesh;
 Utils utils;
@@ -33,7 +37,7 @@ void setup()
 {
   pinMode(USER_BTN, INPUT_PULLUP);
   console.begin();
-  sys.begin(10);        // Set Watchdog Timout to 10s
+  sys.begin(WATCHDOG_TIMEOUT);
   hmi.begin();
   hmi.setMode(Hmi::LED_MODE_POWER_ON);
   hmi.playSound(Hmi::BUZZER_POWER_ON);
@@ -80,12 +84,22 @@ void loop()
   }
   btn = digitalRead(USER_BTN);
 
+  static bool lowBat = false;
   float soc = sys.getBatteryPercentage();
-  if(soc < 10.0)
+  if(lowBat != LOW_BATTERY_SOC)
   {
-    console.error.printf("Low Battery! (%.1f%%)\n", soc);
+    hmi.setStatusIndicator(lowBat? Hmi::LED_STATUS_LOW_BATTERY : Hmi::LED_STATUS_OK);
+    if(lowBat)
+    {
+      console.warning.printf("[MAIN] Battery state critical: %d%%\n", soc);
+    }
+  }
+  if(soc < MIN_BATTERY_SOC)
+  {
+    console.error.printf("[MAIN] Low Battery! (%d%%)\n", soc);
     sys.powerDown();
   }
+  lowBat = soc < LOW_BATTERY_SOC;
 
   sys.feedWatchdog();
   delay(50);

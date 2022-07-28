@@ -16,12 +16,13 @@ bool Mailbox::begin(void)
 void Mailbox::update(void* pvParameter)
 {
   Mailbox* ref = (Mailbox*)pvParameter;
+  uint32_t cardTimeout = millis();
 
   while(true)
   {
     TickType_t task_last_tick = xTaskGetTickCount();
 
-    uint8_t nodeStatus = ref->mesh.getNodePayload(0) >> ref->mesh.getPersonalId() & 0x03;
+    uint8_t nodeStatus = ref->mesh.getNodePayload(0) >> (ref->mesh.getPersonalId() * 2) & 0x03;
     bool allCorrect = (ref->mesh.getNodePayload(0) & 0x80000000) && ref->mesh.getNodeState(0);
     uint32_t card = ref->readCardData();
     ref->mesh.setPayload(card);
@@ -35,23 +36,40 @@ void Mailbox::update(void* pvParameter)
           ref->hmi.playSound(Hmi::BUZZER_CARD_INSERTED);
           ref->state = STATE_ACTIVE;
         }
+        if(millis() - cardTimeout > NO_CARD_TIMEOUT)
+        {
+          ref->hmi.setMode(Hmi::LED_MODE_POWER_OFF);
+          ref->hmi.playSound(Hmi::BUZZER_POWER_OFF);
+          ref->state = STATE_POWERDOWN;
+        }
         break;
       case STATE_ACTIVE:
         if(card == -1)
         {
           ref->hmi.playSound(Hmi::BUZZER_CARD_REMOVED);
           ref->state = STATE_READY;
+          cardTimeout = millis();
         }
         if(allCorrect)
         {
           ref->hmi.playSound(Hmi::BUZZER_SUCCESS);
           ref->state = STATE_WIN;
+          ref->stateTimer = millis();
         }
         break;
       case STATE_WIN:
-        // TODO: Wait until node 0 disconnected or timeout
+        if(!ref->mesh.getNodeState(0) || (millis() - ref->stateTimer > WIN_STATE_TIMEOUT))
+        {
+          ref->hmi.setMode(Hmi::LED_MODE_POWER_OFF);
+          ref->hmi.playSound(Hmi::BUZZER_POWER_OFF);
+          ref->state = STATE_POWERDOWN;
+        }
         break;
       case STATE_POWERDOWN:
+        if(ref->hmi.getMode() == Hmi::LED_MODE_OFF)
+        {
+          ref->sys.powerDown();
+        }
         break;
     }
 

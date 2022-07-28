@@ -3,6 +3,7 @@
 #include "freertos/task.h"
 
 //#define log   DISABLE_MODULE_LEVEL
+//#define DISABLE_BUZZER
 
 void Hmi::begin(void)
 {
@@ -103,6 +104,9 @@ void Hmi::update(void* pvParameter)
         break;
       case LED_STATUS_ERROR:
         ref->led.setPixelColor(0, ref->led.Color((millis() % 400) > 200? 255 : 0, 0, 0));   // Red blinking
+        break;
+      case LED_STATUS_LOW_BATTERY:
+        ref->led.setPixelColor(0, ref->led.Color(255, 255, 0));   // Yellow steady
         break;
       default:
         ref->led.setPixelColor(0, 0);
@@ -225,7 +229,9 @@ void Hmi::update(void* pvParameter)
         else if(freq != freqOld)
         {
           freqOld = freq;
-          ledcWriteTone(BUZZER_PWM_CHANNEL, freq);
+          #ifndef DISABLE_BUZZER
+            ledcWriteTone(BUZZER_PWM_CHANNEL, freq);
+          #endif
         }
       }
     }

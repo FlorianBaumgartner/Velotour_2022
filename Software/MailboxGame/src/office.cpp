@@ -74,6 +74,7 @@ void Office::update(void* pvParameter)
         if(ref->sys.getButtonState() || (millis() - ref->stateTimer > SUCCESS_STATE_TIMEOUT * 1000))
         {
           ref->hmi.setResultIndicator(Hmi::LED_RESULT_NONE);
+          ref->hmi.setMode(Hmi::LED_MODE_POWER_OFF);
           ref->hmi.playSound(Hmi::BUZZER_POWER_OFF);
           ref->state = STATE_POWERDOWN;
         }
