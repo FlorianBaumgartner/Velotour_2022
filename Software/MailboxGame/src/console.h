@@ -49,13 +49,18 @@
 
 #define DISABLE_MODULE_LEVEL            dummy
 
+
+enum ConsoleColor {COLOR_DEFAULT, COLOR_BLACK, COLOR_RED, COLOR_GREEN, COLOR_YELLOW, COLOR_BLUE, COLOR_MAGENTA, COLOR_CYAN, COLOR_WHITE};
+
 class ConsoleStatus: public Stream
 {
   public:
     Stream* console = nullptr;
-    enum ConsoleType {StatusOk_t, StatusLog_t, StatusWarning_t, StatusError_t, StatusDummy_t};
+    enum ConsoleType {StatusOk_t, StatusLog_t, StatusWarning_t, StatusError_t, StatusCustom_t, StatusDummy_t};
     ConsoleType type;
     bool enabled = true;
+    const char* textColor = CONSOLE_COLOR_DEFAULT;
+    const char* backgroundColor = CONSOLE_BACKGROUND_DEFAULT;
     
     ConsoleStatus(ConsoleType t): type(t) {}
     inline void ref(Stream* c) {console = c;}
@@ -65,11 +70,31 @@ class ConsoleStatus: public Stream
     inline int peek(void) {return console->peek();}
     inline size_t write(uint8_t c) {return write((const uint8_t*) &c, 1);}
     inline size_t write(const char* buffer, size_t size) {return write((uint8_t*) buffer, size);}
+    ConsoleStatus& operator[] (ConsoleColor color)
+    {
+      switch(color)
+      {
+        case COLOR_DEFAULT: backgroundColor = CONSOLE_BACKGROUND_DEFAULT; break;
+        case COLOR_BLACK:   backgroundColor = CONSOLE_BACKGROUND_BLACK;   break;
+        case COLOR_RED:     backgroundColor = CONSOLE_BACKGROUND_RED;     break;
+        case COLOR_GREEN:   backgroundColor = CONSOLE_BACKGROUND_GREEN;   break;
+        case COLOR_YELLOW:  backgroundColor = CONSOLE_BACKGROUND_YELLOW;  break;
+        case COLOR_BLUE:    backgroundColor = CONSOLE_BACKGROUND_BLUE;    break;
+        case COLOR_MAGENTA: backgroundColor = CONSOLE_BACKGROUND_MAGENTA; break;
+        case COLOR_CYAN:    backgroundColor = CONSOLE_BACKGROUND_CYAN;    break;
+        case COLOR_WHITE:   backgroundColor = CONSOLE_BACKGROUND_WHITE;   break;
+      }
+      return *this;
+    }
     size_t write(const uint8_t* buffer, size_t size)
     {
       if(!enabled || type == StatusDummy_t) return 0;
       switch(type)
       {
+        case StatusCustom_t:
+          console->print(textColor);
+          console->print(backgroundColor);
+          break;
         case StatusOk_t:
           console->print(CONSOLE_OK);
           break;
@@ -85,6 +110,7 @@ class ConsoleStatus: public Stream
       }
       size = console->write((const uint8_t*) buffer, size);
       console->print(CONSOLE_LOG);
+      backgroundColor = CONSOLE_BACKGROUND_DEFAULT;
       return size;
     }
 };
@@ -103,6 +129,7 @@ class Console: public Stream
     volatile uint32_t writeIdx = 0, readIdx = 0;
     SemaphoreHandle_t bufferAccessSemaphore = nullptr;
     TaskHandle_t writeTaskHandle = nullptr;
+    ConsoleStatus custom = ConsoleStatus(ConsoleStatus::StatusCustom_t);
 
     bool initialize(void);
     void printStartupMessage(void);
@@ -129,8 +156,8 @@ class Console: public Stream
     ConsoleStatus warning = ConsoleStatus(ConsoleStatus::StatusWarning_t);
     ConsoleStatus dummy = ConsoleStatus(ConsoleStatus::StatusDummy_t);
   
-    Console(USBCDC &stream): stream(stream), type(USBCDC_t) {ok.ref(this); log.ref(this); error.ref(this); warning.ref(this); dummy.ref(this);}
-    Console(HardwareSerial &stream): stream(stream), type(HardwareSerial_t) {ok.ref(this); log.ref(this); error.ref(this); warning.ref(this); dummy.ref(this);}
+    Console(USBCDC &stream): stream(stream), type(USBCDC_t) {ok.ref(this); log.ref(this); error.ref(this); warning.ref(this); custom.ref(this); dummy.ref(this);}
+    Console(HardwareSerial &stream): stream(stream), type(HardwareSerial_t) {ok.ref(this); log.ref(this); error.ref(this); warning.ref(this); custom.ref(this); dummy.ref(this);}
     bool begin(void);                 // Used for USBSerial
     bool begin(unsigned long baud, uint32_t config=SERIAL_8N1, int8_t rxPin=-1, int8_t txPin=-1, bool invert=false, unsigned long timeout_ms = 20000UL, uint8_t rxfifo_full_thrhd = 112);    // Used for HardwareSerial
     void end(void);
@@ -143,6 +170,22 @@ class Console: public Stream
       ok.enable(level <= LEVEL_OK);
       warning.enable(level <= LEVEL_WARNING);
       error.enable(level <= LEVEL_ERROR);
+    }
+    ConsoleStatus& operator[] (ConsoleColor color)
+    {
+      switch(color)
+      {
+        case COLOR_DEFAULT: custom.textColor = CONSOLE_COLOR_DEFAULT; break;
+        case COLOR_BLACK:   custom.textColor = CONSOLE_COLOR_BLACK;   break;
+        case COLOR_RED:     custom.textColor = CONSOLE_COLOR_RED;     break;
+        case COLOR_GREEN:   custom.textColor = CONSOLE_COLOR_GREEN;   break;
+        case COLOR_YELLOW:  custom.textColor = CONSOLE_COLOR_YELLOW;  break;
+        case COLOR_BLUE:    custom.textColor = CONSOLE_COLOR_BLUE;    break;
+        case COLOR_MAGENTA: custom.textColor = CONSOLE_COLOR_MAGENTA; break;
+        case COLOR_CYAN:    custom.textColor = CONSOLE_COLOR_CYAN;    break;
+        case COLOR_WHITE:   custom.textColor = CONSOLE_COLOR_WHITE;   break;
+      }
+      return custom;
     }
 
     operator bool() const {return streamActive;}

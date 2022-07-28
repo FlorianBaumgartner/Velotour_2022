@@ -26,7 +26,7 @@ bool Console::initialize(void)
 {
   initialized = true;
   bufferAccessSemaphore = xSemaphoreCreateMutex();
-  xTaskCreate(writeTask, "task_consoleWrite", 2048, this, 1, &writeTaskHandle);
+  xTaskCreate(writeTask, "task_consoleWrite", 4096, this, 1, &writeTaskHandle);
   xTaskCreate(interfaceTask, "task_consoleIface", 4096, this, 1, NULL);    // TODO: Stack size must be that large?!
   return true;
 }
