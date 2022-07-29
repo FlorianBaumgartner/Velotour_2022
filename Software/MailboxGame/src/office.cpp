@@ -19,6 +19,7 @@ bool Office::begin(void)
   }
 
   xTaskCreate(update, "task_office", 2048, this, 1, NULL);
+  console.ok.println("[OFFICE] Initialization successfull!");
   return true;
 }
 
@@ -27,6 +28,8 @@ void Office::update(void* pvParameter)
 {
   Office* ref = (Office*)pvParameter;
   uint32_t printTimer = 0;
+  uint32_t stateTimer = -1;
+  State state = STATE_READY;
 
   while(true)
   {
@@ -59,24 +62,24 @@ void Office::update(void* pvParameter)
     ref->returnPayload |= allCorrect? 0x80000000 : 0x00000000;      // MSB is set in payload if all cards are correct -> game finished
     ref->mesh.setPayload(ref->returnPayload);                       // Send game info back to all mailboxes
 
-    switch(ref->state)
+    switch(state)
     {
       case STATE_READY:
         if(allCorrect)
         {
           ref->hmi.setResultIndicator(ref->solution);
           ref->hmi.playSound(Hmi::BUZZER_SUCCESS);
-          ref->state = STATE_WIN;
-          ref->stateTimer = millis();
+          state = STATE_WIN;
+          stateTimer = millis();
         }
         break;
       case STATE_WIN:
-        if(ref->sys.getButtonState() || (millis() - ref->stateTimer > SUCCESS_STATE_TIMEOUT * 1000))
+        if(ref->sys.getButtonState() || (millis() - stateTimer > SUCCESS_STATE_TIMEOUT * 1000))
         {
           ref->hmi.setResultIndicator(Hmi::LED_RESULT_NONE);
           ref->hmi.setMode(Hmi::LED_MODE_POWER_OFF);
           ref->hmi.playSound(Hmi::BUZZER_POWER_OFF);
-          ref->state = STATE_POWERDOWN;
+          state = STATE_POWERDOWN;
         }
         break;
       case STATE_POWERDOWN:
@@ -84,6 +87,9 @@ void Office::update(void* pvParameter)
         {
           ref->sys.powerDown();
         }
+        break;
+      default:
+        console.error.printf("[OFFICE] Undefined State: %d\n", state);
         break;
     }
 

@@ -48,17 +48,6 @@ void setup()
     hmi.playSound(Hmi::BUZZER_ERROR);
   }
 
-  console.print("[MAIN] ");
-  console[COLOR_BLUE].print("This text is blue with a ");
-  console[COLOR_MAGENTA].print("pink");
-  console[COLOR_BLUE].print(" word in it. ");
-  console.println("- now back to normal mode");
-
-  console.print("[MAIN] ");
-  console[COLOR_CYAN].print("This text is cyan with some ");
-  console[COLOR_CYAN][COLOR_RED].print("highlighted words");
-  console[COLOR_CYAN].println(" which can be very usefull.");
-
   int id = strtol(utils.getSerialNumber(), NULL, 0);
   mesh.begin(id);
 
@@ -91,7 +80,7 @@ void loop()
   static bool btn = true;
   if(!digitalRead(USER_BTN) && btn)
   {
-
+    console.log.println("[MAIN] Boot button pressed");
   }
   btn = digitalRead(USER_BTN);
 

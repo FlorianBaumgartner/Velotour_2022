@@ -22,7 +22,7 @@ void System::startWatchdog(uint32_t seconds)
   esp_task_wdt_init(seconds, true);   // Enable panic so ESP32 restarts
   esp_task_wdt_add(NULL);             // Add current thread to WDT watch
   esp_task_wdt_reset();
-  console.log.printf("[SYSTEM] Watchdog started with timout of %d s\n", seconds);
+  console.log.printf("[SYSTEM] Watchdog started with timeout of %d s\n", seconds);
 }
 
 void System::feedWatchdog(void)
@@ -32,7 +32,7 @@ void System::feedWatchdog(void)
 
 void System::powerDown(void)
 {
-  console.log.println("[SYSTEM] Power down systrem...");
+  console.log.println("[SYSTEM] Power down system...");
   delay(10);
   digitalWrite(pinPowerOff, 1);
   while(true) yield();

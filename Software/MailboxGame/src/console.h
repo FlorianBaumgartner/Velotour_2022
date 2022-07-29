@@ -5,7 +5,7 @@
 #include "USB.h"
 
 #define INTERFACE_UPDATE_RATE           10            // [hz]
-#define QUEUE_BUFFER_LENGTH             (1<<12)       // [#]    Buffer Size must be power of 2
+#define QUEUE_BUFFER_LENGTH             (1<<13)       // [#]    Buffer Size must be power of 2
 #define CONSOLE_ACTIVE_DELAY            3000          // [ms]   Data transmission hold-back delay after console object has been enabled
 #define INTERFACE_ACTIVE_DELAY          1500          // [ms]   Data transmission hold-back delay after physical connection has been established (Terminal opened)
 

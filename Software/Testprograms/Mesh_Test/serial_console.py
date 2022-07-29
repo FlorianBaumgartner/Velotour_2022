@@ -35,12 +35,13 @@ class Port:
 class Console(threading.Thread):
     def __init__(self):
         self.UPDATE_FREQ = 10    # [Hz]
-        self.TIMEOUT     = 5     # [s]
+        self.TIMEOUT     = 6     # [s]
         
         threading.Thread.__init__(self)
         self._data = ""
         self.ser = None
         self.runThread = True
+        self.processing = False
 
 
     def getPorts(self):
@@ -60,7 +61,7 @@ class Console(threading.Thread):
         while(self.runThread):
             try:
                 time.sleep(1 / self.UPDATE_FREQ)
-                ser = serial.Serial(comPort, 115200, timeout=self.TIMEOUT)
+                ser = serial.Serial(comPort, 115200, timeout=self.TIMEOUT)         
 
             except serial.SerialException:
                 try:
@@ -81,11 +82,12 @@ class Console(threading.Thread):
                     
                 except serial.SerialException:
                     ser.close()
-                    break
+                    pass
                 except UnicodeDecodeError:  # Ignore characters that cannot be printed
                     pass
                 except KeyboardInterrupt:
                     self.runThread = False
+                    self.processing = False
 
     def getData(self):
         return self._data

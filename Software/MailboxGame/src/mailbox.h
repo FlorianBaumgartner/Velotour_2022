@@ -40,8 +40,6 @@ class Mailbox
     TwoWire i2cBus = TwoWire(0);
     MFRC522_I2C dev = MFRC522_I2C(pinNfcRst, devAddr, i2cBus);
     MFRC522 mfrc522 = MFRC522(&dev);
-    State state = STATE_READY;
-    uint32_t stateTimer = -1;
 
     static void update(void* pvParameter);
     void initializeNfc(void);

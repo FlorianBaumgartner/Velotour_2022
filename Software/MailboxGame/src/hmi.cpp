@@ -19,7 +19,7 @@ void Hmi::begin(void)
   ledcAttachPin(pinBuzzer, BUZZER_PWM_CHANNEL);
   ledcWriteTone(BUZZER_PWM_CHANNEL, 0);
 
-  xTaskCreate(update, "task_hmi", 4096, this, 1, NULL);
+  xTaskCreate(update, "task_hmi", 1024, this, 1, NULL);
 }
 
 void Hmi::setStatusIndicator(LedStatus status)
