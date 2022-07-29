@@ -59,6 +59,7 @@ class ConsoleStatus: public Stream
     enum ConsoleType {StatusOk_t, StatusLog_t, StatusWarning_t, StatusError_t, StatusCustom_t, StatusDummy_t};
     ConsoleType type;
     bool enabled = true;
+    bool colorEnabled = true;
     const char* textColor = CONSOLE_COLOR_DEFAULT;
     const char* backgroundColor = CONSOLE_BACKGROUND_DEFAULT;
     
@@ -89,27 +90,33 @@ class ConsoleStatus: public Stream
     size_t write(const uint8_t* buffer, size_t size)
     {
       if(!enabled || type == StatusDummy_t) return 0;
-      switch(type)
+      if(colorEnabled)
       {
-        case StatusCustom_t:
-          console->print(textColor);
-          console->print(backgroundColor);
-          break;
-        case StatusOk_t:
-          console->print(CONSOLE_OK);
-          break;
-        case StatusWarning_t:
-          console->print(CONSOLE_WARNING);
-          break;
-        case StatusError_t:
-          console->print(CONSOLE_ERROR);
-          break;
-        default:
-          console->print(CONSOLE_LOG);
-          break;
+        switch(type)
+        {
+          case StatusCustom_t:
+            console->print(textColor);
+            console->print(backgroundColor);
+            break;
+          case StatusOk_t:
+            console->print(CONSOLE_OK);
+            break;
+          case StatusWarning_t:
+            console->print(CONSOLE_WARNING);
+            break;
+          case StatusError_t:
+            console->print(CONSOLE_ERROR);
+            break;
+          default:
+            console->print(CONSOLE_LOG);
+            break;
+        }
       }
       size = console->write((const uint8_t*) buffer, size);
-      console->print(CONSOLE_LOG);
+      if(colorEnabled)
+      {
+        console->print(CONSOLE_LOG);
+      }
       backgroundColor = CONSOLE_BACKGROUND_DEFAULT;
       return size;
     }
@@ -164,6 +171,10 @@ class Console: public Stream
     void enable(bool state) {enabled = state;}
     void flush(void) {readIdx = writeIdx;}
     void printTimestamp(void);        // TODO: Add possibillity to add string as parameter
+    void enableColors(bool state)
+    {
+      ok.colorEnabled = log.colorEnabled = error.colorEnabled = warning.colorEnabled = custom.colorEnabled = dummy.colorEnabled = state;
+    }
     void setLevel(ConsoleLevel level)
     {
       log.enable(level <= LEVEL_LOG);

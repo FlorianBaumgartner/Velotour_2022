@@ -118,17 +118,16 @@ void Office::printInfo(void)
   }
   for(int i = 1; i < MAX_NODES_NUM; i++)
   {
-    const char* status;
+    if(i == 1) console.log.print("\n[OFFICE] Status:  |");
     switch(mailboxStatus[i])
     {
-      case MAILBOX_IGNORED:       status = "IGNORED"; break;
-      case MAILBOX_DISCONNECTED:  status = "DISCONN"; break;
-      case MAILBOX_CONNECTED:     status = "CONNECT"; break;
-      case MAILBOX_ACTIVE:        status = " ACTIVE"; break;
-      default:                    status = "UNKNOWN"; break;
-    }    
-    if(i == 1) console.log.print("\n[OFFICE] Status:  |");
-    console.log.printf(" %8s |", status);
+      case MAILBOX_IGNORED:       console.print("  IGNORED");               break;
+      case MAILBOX_DISCONNECTED:  console[COLOR_RED].print("  DISCONN");    break;
+      case MAILBOX_CONNECTED:     console[COLOR_YELLOW].print("  CONNECT"); break;
+      case MAILBOX_ACTIVE:        console[COLOR_GREEN].print("   ACTIVE");  break;
+      default:                    console[COLOR_RED].print("  UNKNOWN");    break;
+    } 
+    console.print(" |");
   }
   for(int i = 1; i < MAX_NODES_NUM; i++)
   {
