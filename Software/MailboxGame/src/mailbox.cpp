@@ -22,7 +22,7 @@ void Mailbox::update(void* pvParameter)
   uint32_t cardTimeout = millis();
   uint32_t stateTimer = -1;
   State state = STATE_READY;
-  console.log.println("[MMAILBOX] Waiting on card to be inserted...");
+  console.log.println("[MAILBOX] Waiting on card to be inserted...");
 
   while(true)
   {

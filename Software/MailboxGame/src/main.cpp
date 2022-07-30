@@ -73,6 +73,7 @@ void setup()
       hmi.playSound(Hmi::BUZZER_ERROR);
     }
   }
+  pinMode(33, OUTPUT);
 }
 
 void loop()
@@ -80,7 +81,8 @@ void loop()
   static bool btn = true;
   if(!digitalRead(USER_BTN) && btn)
   {
-    console.log.println("[MAIN] Boot button pressed");
+    console.log.println("[MAIN] Boot button pressed -> Turn off system");
+    sys.powerDown();
   }
   btn = digitalRead(USER_BTN);
 
@@ -103,4 +105,6 @@ void loop()
 
   sys.feedWatchdog();
   delay(50);
+
+  //digitalWrite(33, utils.isConnected());
 }

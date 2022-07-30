@@ -75,19 +75,22 @@ class Console(threading.Thread):
             while self.runThread:
                 try:
                     self._data = ser.read().decode('UTF-8');
-                    if(not self._data):
-                        break
-                    sys.stdout.write(self._data)
-                    sys.stdout.flush()
+                    if self._data:
+                        sys.stdout.write(self._data)
+                        sys.stdout.flush()
                     
                 except serial.SerialException:
                     ser.close()
-                    pass
+                    break
                 except UnicodeDecodeError:  # Ignore characters that cannot be printed
                     pass
                 except KeyboardInterrupt:
                     self.runThread = False
                     self.processing = False
+        try:
+            ser.close()
+        except UnboundLocalError:
+            pass
 
     def getData(self):
         return self._data
