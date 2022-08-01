@@ -65,6 +65,12 @@ void Office::update(void* pvParameter)
     ref->returnPayload |= allCorrect? 0x80000000 : 0x00000000;      // MSB is set in payload if all cards are correct -> game finished
     ref->mesh.setPayload(ref->returnPayload);                       // Send game info back to all mailboxes
 
+    if((millis() - printTimer > PRINT_INTERVAL) && millis() > 10000 && console && state == STATE_READY)
+    {
+      printTimer = millis();
+      ref->printInfo();
+    }
+
     switch(state)
     {
       case STATE_READY:
@@ -105,64 +111,73 @@ void Office::update(void* pvParameter)
         console.error.printf("[OFFICE] Undefined State: %d\n", state);
         break;
     }
-
-    if((millis() - printTimer > PRINT_INTERVAL) && millis() > 10000 && console && state != STATE_POWERDOWN)
-    {
-      printTimer = millis();
-      ref->printInfo();
-    }
     
     vTaskDelayUntil(&task_last_tick, (const TickType_t) 1000 / TASK_OFFICE_FREQ);
   }
   vTaskDelete(NULL);
 }
 
-void Office::printInfo(void)
+void Office::printInfo(bool forceUpdate)
 { 
-  console.log.print("[OFFICE]\n[OFFICE] **********");
-  for(int i = 1; i < MAX_NODES_NUM; i++)
+  bool update = forceUpdate;
+  static Hmi::NodeStatus mailboxStatusOld[MAX_NODES_NUM];
+  static uint32_t payloadOld[MAX_NODES_NUM];
+  for(int i = 0; i < MAX_NODES_NUM; i++)
   {
-    console.log.print("***********");
+    update |= (mailboxStatus[i] != mailboxStatusOld[i]);
+    update |= (mesh.getNodePayload(i) != payloadOld[i]);
+    mailboxStatusOld[i] = mailboxStatus[i];
+    payloadOld[i] = mesh.getNodePayload(i);
   }
-  for(int i = 1; i < MAX_NODES_NUM; i++)
+  if(update)
   {
-    if(i == 1) console.log.print("\n[OFFICE] Node:    |");
-    console.log.printf(" %8d |", i);
-  }
-  for(int i = 1; i < MAX_NODES_NUM; i++)
-  {
-    if(i == 1) console.log.print("\n[OFFICE] Status:  |");
-    switch(mailboxStatus[i])
+    console.print("\n[OFFICE] ");
+    console.printTimestamp();
+    console.print("\n[OFFICE] **********");
+    for(int i = 1; i < MAX_NODES_NUM; i++)
     {
-      case Hmi::NODE_IGNORED:       console.print("  IGNORED");               break;
-      case Hmi::NODE_DISCONNECTED:  console[COLOR_RED].print("  DISCONN");    break;
-      case Hmi::NODE_CONNECTED:     console[COLOR_YELLOW].print("  CONNECT"); break;
-      case Hmi::NODE_ACTIVE:        console[COLOR_GREEN].print("   ACTIVE");  break;
-      default:                      console[COLOR_RED].print("  UNKNOWN");    break;
-    } 
-    console.print(" |");
-  }
-  for(int i = 1; i < MAX_NODES_NUM; i++)
-  {
-    if(i == 1) console.log.print("\n[OFFICE] Compare: |");
-    console.log.printf(" %08X |", mailboxCompareCode[i]);
-  }
-  for(int i = 1; i < MAX_NODES_NUM; i++)
-  {
-    if(i == 1) console.log.print("\n[OFFICE] Payload: |");
-    if(mesh.getNodePayload(i) != -1)
+      console.print("***********");
+    }
+    for(int i = 1; i < MAX_NODES_NUM; i++)
     {
-      console[mesh.getNodePayload(i) == mailboxCompareCode[i]? COLOR_GREEN : COLOR_RED].printf(" %08X", mesh.getNodePayload(i));
+      if(i == 1) console.print("\n[OFFICE] Node:    |");
+      console.printf(" %8d |", i);
+    }
+    for(int i = 1; i < MAX_NODES_NUM; i++)
+    {
+      if(i == 1) console.print("\n[OFFICE] Status:  |");
+      switch(mailboxStatus[i])
+      {
+        case Hmi::NODE_IGNORED:       console.print("  IGNORED");               break;
+        case Hmi::NODE_DISCONNECTED:  console[COLOR_RED].print("  DISCONN");    break;
+        case Hmi::NODE_CONNECTED:     console[COLOR_YELLOW].print("  CONNECT"); break;
+        case Hmi::NODE_ACTIVE:        console[COLOR_GREEN].print("   ACTIVE");  break;
+        default:                      console[COLOR_RED].print("  UNKNOWN");    break;
+      } 
       console.print(" |");
     }
-    else console.log.print(" -------- |");
+    for(int i = 1; i < MAX_NODES_NUM; i++)
+    {
+      if(i == 1) console.print("\n[OFFICE] Compare: |");
+      console.printf(" %08X |", mailboxCompareCode[i]);
+    }
+    for(int i = 1; i < MAX_NODES_NUM; i++)
+    {
+      if(i == 1) console.print("\n[OFFICE] Payload: |");
+      if(mesh.getNodePayload(i) != -1)
+      {
+        console[mesh.getNodePayload(i) == mailboxCompareCode[i]? COLOR_GREEN : COLOR_RED].printf(" %08X", mesh.getNodePayload(i));
+        console.print(" |");
+      }
+      else console.print(" -------- |");
+    }
+    console.print("\n[OFFICE] **********");
+    for(int i = 1; i < MAX_NODES_NUM; i++)
+    {
+      console.print("***********");
+    }
+    console.println();
   }
-  console.log.print("\n[OFFICE] **********");
-  for(int i = 1; i < MAX_NODES_NUM; i++)
-  {
-    console.log.print("***********");
-  }
-  console.log.println();
 }
 
 bool Office::loadMailboxFile(const char* path)

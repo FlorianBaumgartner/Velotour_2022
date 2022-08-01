@@ -39,10 +39,6 @@ void Mailbox::update(void* pvParameter)
     {
       card = cardData;
     }
-    else if(cardData != -1)
-    {
-      console.log.printf("[MAILBOX] Wait until Office has confirmed reception of payload (%08X)\n", card);
-    }
     ref->mesh.setPayload(card);
 
     switch(state)

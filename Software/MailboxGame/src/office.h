@@ -7,7 +7,7 @@
 #include "mesh.h"
 
 #define TASK_OFFICE_FREQ          10            // [Hz]
-#define PRINT_INTERVAL            2000          // [ms]
+#define PRINT_INTERVAL            100           // [ms]
 #define SUCCESS_STATE_TIMEOUT     90            // [s]
 
 class Office
@@ -28,7 +28,7 @@ class Office
     uint32_t returnPayload = 0x00000000;
     
     static void update(void* pvParameter);
-    void printInfo(void);
+    void printInfo(bool forceUpdate = false);
     bool loadMailboxFile(const char* path);
     bool loadOfficeFile(const char* path);
 };
