@@ -4,10 +4,6 @@
 
 //#define DISABLE_NFC
 
-//static uint32_t readCardData(void);
-//static MFRC522* nfc = nullptr;
-
-
 bool Mailbox::begin(void)
 {
   #ifndef DISABLE_NFC
@@ -18,7 +14,6 @@ bool Mailbox::begin(void)
     }
   #endif
 
-  //nfc = &mfrc522;
   xTaskCreate(update, "task_mailbox", 2048, this, 1, NULL);
   console.ok.println("[MAILBOX] Initialization successfull!");
   return true;
@@ -29,6 +24,7 @@ void Mailbox::update(void* pvParameter)
   Mailbox* ref = (Mailbox*)pvParameter;
   uint32_t cardTimeout = millis();
   uint32_t stateTimer = -1;
+  uint32_t card = -1;
   State state = STATE_READY;
   console.log.println("[MAILBOX] Waiting on card to be inserted...");
 
@@ -36,9 +32,17 @@ void Mailbox::update(void* pvParameter)
   {
     TickType_t task_last_tick = xTaskGetTickCount();
 
-    uint8_t nodeStatus = (ref->mesh.getNodePayload(0) >> (ref->mesh.getPersonalId() * 2)) & 0x03;
+    uint8_t nodeStatus = (ref->mesh.getNodePayload(0) >> (ref->mesh.getPersonalId() * 2)) & 0x03;  // 00 = ignored node, 01 = disconnected, 10 = wrong code, 11 = correct code
     bool allCorrect = (ref->mesh.getNodePayload(0) & 0x80000000) && ref->mesh.getNodeState(0) && ref->mesh.getNodePayload(0) != -1;
-    uint32_t card = ref->nfcInitialized? ref->readCardData() : -1;
+    uint32_t cardData = ref->nfcInitialized? ref->readCardData() : -1;
+    if((card != cardData && cardData != -1) || nodeStatus == 0x02 || nodeStatus == 0x03)  // Only update payload if new card has been inserted or office has confirmed the reception
+    {
+      card = cardData;
+    }
+    else if(cardData != -1)
+    {
+      console.log.printf("[MAILBOX] Wait until Office has confirmed reception of payload (%08X)\n", card);
+    }
     ref->mesh.setPayload(card);
 
     switch(state)
@@ -83,6 +87,7 @@ void Mailbox::update(void* pvParameter)
       case STATE_WIN:
         if(!ref->mesh.getNodeState(0) || (millis() - stateTimer > WIN_STATE_TIMEOUT * 1000))
         {
+          ref->hmi.setResultIndicator(Hmi::LED_RESULT_NONE);
           ref->hmi.setStatusIndicator(Hmi::LED_STATUS_OFF);
           ref->hmi.setMode(Hmi::LED_MODE_POWER_OFF);
           ref->hmi.playSound(Hmi::BUZZER_POWER_OFF);
@@ -119,7 +124,7 @@ bool Mailbox::initializeNfc(void)
     }
     mfrc522.PCD_Init();     // Init MFRC522
     uint8_t check = mfrc522.PCD_ReadRegister(MFRC522::VersionReg);
-    if(check != 0x92)
+    if(check != MFRC522_VERSION_ID)
     {
       console.error.printf("[MAILBOX] Could not initialize NFC chip (ID Register: %02X)\n", check);
       return false;
@@ -133,23 +138,11 @@ uint32_t Mailbox::readCardData(void)
 {
   uint8_t req_buff[2];
   uint8_t req_buff_size = sizeof(req_buff);
+  if(mfrc522.PCD_ReadRegister(MFRC522::VersionReg) != MFRC522_VERSION_ID) return -1;
   mfrc522.PCD_StopCrypto1();
-  mfrc522.PICC_HaltA();                                 // TODO: Delay after this functioncall necessary?
-  mfrc522.PICC_WakeupA(req_buff, &req_buff_size);       // TODO: Delay after this functioncall necessary?
+  mfrc522.PICC_HaltA();
+  mfrc522.PICC_WakeupA(req_buff, &req_buff_size);
   uint8_t s = mfrc522.PICC_Select(&(mfrc522.uid), 0);
   if(mfrc522.GetStatusCodeName((MFRC522::StatusCode)s) == F("Timeout in communication.")) return -1;
   return *(uint32_t*) mfrc522.uid.uidByte;
 }
-
-/*uint32_t readCardData(void)
-{
-  if(nfc == nullptr) return -1;
-  uint8_t req_buff[2];
-  uint8_t req_buff_size = sizeof(req_buff);
-  nfc->PCD_StopCrypto1();
-  nfc->PICC_HaltA();                                 // TODO: Delay after this functioncall necessary?
-  nfc->PICC_WakeupA(req_buff, &req_buff_size);       // TODO: Delay after this functioncall necessary?
-  uint8_t s = nfc->PICC_Select(&(nfc->uid), 0);
-  if(nfc->GetStatusCodeName((MFRC522::StatusCode)s) == F("Timeout in communication.")) return -1;
-  return *(uint32_t*) nfc->uid.uidByte;
-}*/

@@ -3,7 +3,7 @@
 #include "freertos/task.h"
 
 //#define log   DISABLE_MODULE_LEVEL
-#define DISABLE_BUZZER
+//#define DISABLE_BUZZER
 
 void Hmi::begin(void)
 {
@@ -29,6 +29,7 @@ void Hmi::end(void)
   ledcWriteTone(BUZZER_PWM_CHANNEL, 0);
   led.clear();
   led.show();
+  delay(10);
 }
 
 void Hmi::setStatusIndicator(LedStatus status)
@@ -50,7 +51,7 @@ void Hmi::setMode(LedMode mode)
 
 void Hmi::setNodeStatus(int node, NodeStatus status)
 {
-  nodeStatus[node % NUM_LEDS_NODE] = status;
+  nodeStatus[constrain(NUM_LEDS_NODE - 1 - node, 0, NUM_LEDS_NODE - 1)] = status;
 }
 
 void Hmi::playSound(BuzzerSound sound)
@@ -118,6 +119,7 @@ void Hmi::update(void* pvParameter)
       case LED_STATUS_LOW_BATTERY:
         ref->led.setPixelColor(0, ref->led.Color(blinking, blinking, 0));   // Yellow blinking
         break;
+      case LED_STATUS_OFF:
       default:
         ref->led.setPixelColor(0, 0);
     }
@@ -211,24 +213,20 @@ void Hmi::update(void* pvParameter)
     //taskEXIT_CRITICAL(0);
 
 
-    if(ref->playing != playing)
+    if(ref->playing && !playing)
     {
-      playing = ref->playing;
-      if(playing)
-      {
-        buzzerTimer = millis();
-      }
-      else
-      {
-        ledcWriteTone(BUZZER_PWM_CHANNEL, 0);   // Turn off buzzer
-        buzzerTimer = -1;
-        ref->buzzerSound = BUZZER_NONE;
-      }
+      buzzerTimer = millis();
+    }
+    if(!ref->playing)
+    {
+      ledcWriteTone(BUZZER_PWM_CHANNEL, 0);   // Turn off buzzer
+      buzzerTimer = -1;
+      ref->buzzerSound = BUZZER_NONE;
     }
     if(buzzerTimer != -1)
     {
       static int freq = 0, freqOld = 0;
-      if(ref->playing && ref->melody != nullptr)
+      if(ref->melody != nullptr)
       {
         int i = 0, t = 0;
         for(i = 0; i < ref->melodyLength; i++)
@@ -239,7 +237,6 @@ void Hmi::update(void* pvParameter)
         }
         if((i == ref->melodyLength) && (millis() - buzzerTimer > t))
         {
-          buzzerTimer = -1;
           ref->playing = false;
         }
         else if(freq != freqOld)
@@ -251,6 +248,7 @@ void Hmi::update(void* pvParameter)
         }
       }
     }
+    playing = ref->playing;
   
     vTaskDelayUntil(&task_last_tick, (const TickType_t) 1000 / TASK_HMI_FREQ);
   }

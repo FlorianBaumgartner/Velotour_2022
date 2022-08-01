@@ -30,12 +30,13 @@ void Office::update(void* pvParameter)
   uint32_t printTimer = 0;
   uint32_t stateTimer = -1;
   State state = STATE_READY;
+  bool allCorrect = false;
 
   while(true)
   {
     TickType_t task_last_tick = xTaskGetTickCount();
 
-    bool allCorrect = true;
+    bool check = true;
     ref->returnPayload = 0x00000000;                // Divided into 2-Bit node status segments: 00 = ignored node, 01 = disconnected, 10 = wrong code, 11 = correct code
     for(int i = 0; i < MAX_NODES_NUM; i++)
     {
@@ -56,10 +57,11 @@ void Office::update(void* pvParameter)
         {
           ref->returnPayload |= 0x01 << i * 2;                      // Shows that node has not yet joined the network
         }
-        allCorrect &= nodeCorrect;
+        check &= nodeCorrect;
       }
       ref->hmi.setNodeStatus(i, ref->mailboxStatus[i]);             // Update Network status LEDs
     }
+    allCorrect |= check;                                            // Once all cards are correct, keep state even if removed
     ref->returnPayload |= allCorrect? 0x80000000 : 0x00000000;      // MSB is set in payload if all cards are correct -> game finished
     ref->mesh.setPayload(ref->returnPayload);                       // Send game info back to all mailboxes
 
@@ -75,6 +77,7 @@ void Office::update(void* pvParameter)
           ref->hmi.setResultIndicator(ref->solution);
           ref->hmi.setMode(Hmi::LED_MODE_SUCCESS);
           ref->hmi.playSound(Hmi::BUZZER_SUCCESS);
+          console.log.println("[OFFICE] All cards are correct -> Go to win state");
           state = STATE_WIN;
           stateTimer = millis();
         }
@@ -86,6 +89,7 @@ void Office::update(void* pvParameter)
           ref->hmi.setStatusIndicator(Hmi::LED_STATUS_OFF);
           ref->hmi.setMode(Hmi::LED_MODE_POWER_OFF);
           ref->hmi.playSound(Hmi::BUZZER_POWER_OFF);
+          console.log.println("[OFFICE] Enter Powerdown sequence (command received or timeout occured)");
           state = STATE_POWERDOWN;
         }
         break;
@@ -102,7 +106,7 @@ void Office::update(void* pvParameter)
         break;
     }
 
-    if((millis() - printTimer > PRINT_INTERVAL) && millis() > 10000 && console)
+    if((millis() - printTimer > PRINT_INTERVAL) && millis() > 10000 && console && state != STATE_POWERDOWN)
     {
       printTimer = millis();
       ref->printInfo();
@@ -134,7 +138,7 @@ void Office::printInfo(void)
       case Hmi::NODE_DISCONNECTED:  console[COLOR_RED].print("  DISCONN");    break;
       case Hmi::NODE_CONNECTED:     console[COLOR_YELLOW].print("  CONNECT"); break;
       case Hmi::NODE_ACTIVE:        console[COLOR_GREEN].print("   ACTIVE");  break;
-      default:                    console[COLOR_RED].print("  UNKNOWN");    break;
+      default:                      console[COLOR_RED].print("  UNKNOWN");    break;
     } 
     console.print(" |");
   }
@@ -148,7 +152,8 @@ void Office::printInfo(void)
     if(i == 1) console.log.print("\n[OFFICE] Payload: |");
     if(mesh.getNodePayload(i) != -1)
     {
-      console.log.printf(" %08X |", mesh.getNodePayload(i));
+      console[mesh.getNodePayload(i) == mailboxCompareCode[i]? COLOR_GREEN : COLOR_RED].printf(" %08X", mesh.getNodePayload(i));
+      console.print(" |");
     }
     else console.log.print(" -------- |");
   }

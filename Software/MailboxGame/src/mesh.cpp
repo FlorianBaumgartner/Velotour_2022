@@ -46,9 +46,18 @@ void Mesh::begin(int id)
 
 void Mesh::end(bool turnOffEspNow)
 {
-  if(initialized && turnOffEspNow)
+  if(initialized)
   {
-    esp_now_deinit();
+    if(turnOffEspNow)
+    {
+      esp_now_deinit();
+    }
+    for(int i = 0; i < MAX_NODES_NUM; i++)
+    {
+      activeNodes[i] = false;
+      origin[i] = true;
+      message[i].payload = -1;
+    }
   }
   initialized = false;
 }
@@ -159,6 +168,7 @@ void Mesh::update(void *pvParameter)
 
 void Mesh::sentCallback(const uint8_t *macAddr, esp_now_send_status_t status)
 {
+  if(!meshPtr->initialized) return;
   if(status != ESP_NOW_SEND_SUCCESS)
   {
     console.error.println("[MESH] Could not send data (ESP-NOW Error) -> Reset");
@@ -169,6 +179,7 @@ void Mesh::sentCallback(const uint8_t *macAddr, esp_now_send_status_t status)
 
 void Mesh::receiveCallback(const uint8_t *macAddr, const uint8_t *data, int dataLen)
 {
+  if(!meshPtr->initialized) return;
   static int noReplyCount = 0;
   int msgLen = min(ESP_NOW_MAX_DATA_LEN, dataLen);
   uint8_t buffer[ESP_NOW_MAX_DATA_LEN];

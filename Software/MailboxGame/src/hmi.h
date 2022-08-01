@@ -7,9 +7,9 @@
 #define NUM_LEDS_STATUS           1
 #define NUM_LEDS_RESULT           3
 #define NUM_LEDS_NODE             10
-#define BUZZER_PWM_CHANNEL        0
+#define BUZZER_PWM_CHANNEL        1
 
-#define TASK_HMI_FREQ             20            // [Hz]
+#define TASK_HMI_FREQ             30            // [Hz]
 
 class Hmi
 {
@@ -30,6 +30,7 @@ class Hmi
     LedMode getMode(void) {return ledMode;}
     void setNodeStatus(int node, NodeStatus status);
     void playSound(BuzzerSound sound);
+    bool isPlaying(void) {return playing;}
 
 
   private:
@@ -52,14 +53,15 @@ class Hmi
 
     const Tone* melody = nullptr;
     int melodyLength = 0;
-    bool playing = false;
+    volatile bool playing = false;
 
-    const Tone TONE_POWER_ON[4] = {{784, 120}, {0, 20}, {1175, 120}, {0, 20}};
-    const Tone TONE_POWER_OFF[4] = {{1175, 120}, {0, 20}, {784, 120}, {0, 20}};
-    const Tone TONE_CARD_INSERTED[4] = {{1175, 120}, {0, 20}, {1175, 120}, {0, 20}};
-    const Tone TONE_CARD_REMOVED[1] = {784, 300};
+    const Tone TONE_POWER_ON[4] = {{784, 120}, {0, 25}, {1175, 120}, {0, 200}};
+    const Tone TONE_POWER_OFF[4] = {{1175, 120}, {0, 25}, {784, 120}, {0, 200}};
+    const Tone TONE_CARD_INSERTED[4] = {{1175, 120}, {0, 25}, {1175, 120}, {0, 200}};
+    const Tone TONE_CARD_REMOVED[2] = {{784, 200}, {0, 200}};
     const Tone TONE_SUCCESS[4] = {{784, 150}, {988, 150}, {1175, 150}, {1568, 150}};
-    const Tone TONE_ERROR[8] = {{784, 300}, {0, 300}, {784, 300}, {0, 300}, {784, 300}, {0, 300}, {784, 300}, {0, 300}};
+    const Tone TONE_ERROR[16] = {{988, 200}, {0, 200}, {988, 200}, {0, 200}, {988, 200}, {0, 200}, {988, 200}, {0, 200},
+                                 {988, 200}, {0, 200}, {988, 200}, {0, 200}, {988, 200}, {0, 200}, {988, 200}, {0, 200}};
 
     const uint8_t gamma [256] =
     {

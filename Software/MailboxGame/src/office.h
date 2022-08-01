@@ -8,7 +8,7 @@
 
 #define TASK_OFFICE_FREQ          10            // [Hz]
 #define PRINT_INTERVAL            2000          // [ms]
-#define SUCCESS_STATE_TIMEOUT     120           // [s]
+#define SUCCESS_STATE_TIMEOUT     90            // [s]
 
 class Office
 {
