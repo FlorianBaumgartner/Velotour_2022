@@ -27,7 +27,7 @@ class Mesh
   public:
     Mesh();
     void begin(int id = 0);
-    void end(void);
+    void end(bool turnOffEspNow = false);
     void restart(bool immediate = false);
     inline void setPayload(uint32_t data) {message[deviceId].payload = data;}
     inline int8_t getPersonalId(void) {return deviceId;}

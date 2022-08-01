@@ -44,9 +44,9 @@ void Mesh::begin(int id)
   xTaskCreate(update, "task_mesh", 2048, this, 1, NULL);
 }
 
-void Mesh::end(void)
+void Mesh::end(bool turnOffEspNow)
 {
-  if(initialized)
+  if(initialized && turnOffEspNow)
   {
     esp_now_deinit();
   }

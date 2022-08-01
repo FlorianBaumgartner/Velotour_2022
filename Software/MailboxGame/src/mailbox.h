@@ -9,7 +9,7 @@
 
 #define TASK_MAILBOX_FREQ         10            // [Hz]
 #define WIN_STATE_TIMEOUT         150           // [s]
-#define NO_CARD_TIMEOUT           10            // [s]
+#define NO_CARD_TIMEOUT           120 // 10            // [s]
 
 class Mailbox
 {
@@ -22,7 +22,7 @@ class Mailbox
                                                                                                             hmi(hmi),
                                                                                                             mesh(mesh) {}
     bool begin(void);
-
+    
   private:
     enum State {STATE_READY, STATE_ACTIVE, STATE_WIN, STATE_POWERDOWN};
 
@@ -36,14 +36,14 @@ class Mailbox
     Mesh& mesh;
 
     bool nfcInitialized = false;
-    const uint8_t devAddr = 0x28;
+    const uint8_t devAddr = MFRC522_I2C_DEFAULT_ADDR;
     TwoWire i2cBus = TwoWire(0);
     MFRC522_I2C dev = MFRC522_I2C(pinNfcRst, devAddr, i2cBus);
     MFRC522 mfrc522 = MFRC522(&dev);
 
     static void update(void* pvParameter);
-    void initializeNfc(void);
     uint32_t readCardData(void);
+    bool initializeNfc(void);
 };
 
 #endif

@@ -9,13 +9,13 @@
 #include "mailbox.h"
 
 #define USER_BTN          0
-#define PWR_OFF           1
-#define PWR_BTN           2
-#define BAT_MSR           3
-#define NFC_RST           21
+#define PWR_OFF           -1    // 1
+#define PWR_BTN           -1    // 2
+#define BAT_MSR           -1    // 3
+#define NFC_RST           1     // 21
 #define NFC_IRQ           26
-#define NFC_SDA           33
-#define NFC_SCL           34
+#define NFC_SDA           3     // 33
+#define NFC_SCL           2     // 34
 #define EXT_A             35
 #define EXT_B             36
 #define EXT_C             37
@@ -32,6 +32,10 @@ Mesh mesh;
 Utils utils;
 Hmi hmi(SYS_LED, SYS_BZR);
 System sys(PWR_OFF, PWR_BTN, BAT_MSR);
+Office office(sys, hmi, mesh);
+Mailbox mailbox(NFC_RST, NFC_IRQ, NFC_SCL, NFC_SDA, sys, hmi, mesh);
+static bool error = false;
+
 
 void setup()
 {
@@ -54,26 +58,26 @@ void setup()
   if(id == 0)   // Check if Device is Post Office (Serial Number "0")
   {
     console.log.println("[MAIN] Device has ID 0 -> Start Post Office");
-    Office office(sys, hmi, mesh);
     if(!office.begin())
     {
       console.error.println("[MAIN] Could not start Post Office");
       hmi.setStatusIndicator(Hmi::LED_STATUS_ERROR);
       hmi.playSound(Hmi::BUZZER_ERROR);
+      error = true;
     }
   }
   else
   {
     console.log.printf("[MAIN] Device has ID %d -> Start Mailbox\n", id);
-    Mailbox mailbox(NFC_RST, NFC_IRQ, NFC_SCL, NFC_SDA, sys, hmi, mesh);
     if(!mailbox.begin())
     {
       console.error.println("[MAIN] Could not start Mailbox");
       hmi.setStatusIndicator(Hmi::LED_STATUS_ERROR);
       hmi.playSound(Hmi::BUZZER_ERROR);
+      error = true;
     }
   }
-  pinMode(33, OUTPUT);
+  pinMode(33, OUTPUT);    // TODO: Remove
 }
 
 void loop()
@@ -82,13 +86,20 @@ void loop()
   if(!digitalRead(USER_BTN) && btn)
   {
     console.log.println("[MAIN] Boot button pressed -> Turn off system");
-    sys.powerDown();
+    mesh.end();
+    hmi.setResultIndicator(Hmi::LED_RESULT_NONE);
+    hmi.setStatusIndicator(Hmi::LED_STATUS_OFF);
+    hmi.setMode(Hmi::LED_MODE_POWER_OFF);
+    hmi.playSound(Hmi::BUZZER_POWER_OFF);
+    while(hmi.getMode() != Hmi::LED_MODE_NONE) delay(10);
+    hmi.end();
+    sys.powerDown(true);
   }
   btn = digitalRead(USER_BTN);
 
   static bool lowBat = false;
   float soc = sys.getBatteryPercentage();
-  if(lowBat != LOW_BATTERY_SOC)
+  if(lowBat != LOW_BATTERY_SOC && !error)
   {
     hmi.setStatusIndicator(lowBat? Hmi::LED_STATUS_LOW_BATTERY : Hmi::LED_STATUS_OK);
     if(lowBat)
@@ -99,7 +110,7 @@ void loop()
   if(soc < MIN_BATTERY_SOC)
   {
     console.error.printf("[MAIN] Low Battery! (%d%%)\n", soc);
-    sys.powerDown();
+    sys.powerDown(true);
   }
   lowBat = soc < LOW_BATTERY_SOC;
 

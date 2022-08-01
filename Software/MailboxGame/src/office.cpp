@@ -39,16 +39,16 @@ void Office::update(void* pvParameter)
     ref->returnPayload = 0x00000000;                // Divided into 2-Bit node status segments: 00 = ignored node, 01 = disconnected, 10 = wrong code, 11 = correct code
     for(int i = 0; i < MAX_NODES_NUM; i++)
     {
-      if(ref->mailboxStatus[i] != MAILBOX_IGNORED)  // Only care about valid mailboxes, unlisted IDs are ignored
+      if(ref->mailboxStatus[i] != Hmi::NODE_IGNORED)  // Only care about valid mailboxes, unlisted IDs are ignored
       {
-        ref->mailboxStatus[i] = MAILBOX_DISCONNECTED;
+        ref->mailboxStatus[i] = Hmi::NODE_DISCONNECTED;
         if(ref->mesh.getNodeState(i))               // Check if node is present in network
         {
-          ref->mailboxStatus[i] = ref->mesh.getNodePayload(i) == -1? MAILBOX_CONNECTED : MAILBOX_ACTIVE;
+          ref->mailboxStatus[i] = ref->mesh.getNodePayload(i) == -1? Hmi::NODE_CONNECTED : Hmi::NODE_ACTIVE;
         }
 
         bool nodeCorrect = ref->mesh.getNodePayload(i) == ref->mailboxCompareCode[i];   // Check if received card number matches with reference
-        if(ref->mailboxStatus[i] == MAILBOX_ACTIVE)
+        if(ref->mailboxStatus[i] == Hmi::NODE_ACTIVE)
         {
           ref->returnPayload |= (nodeCorrect? 0x03 : 0x02) << i * 2;
         }
@@ -58,6 +58,7 @@ void Office::update(void* pvParameter)
         }
         allCorrect &= nodeCorrect;
       }
+      ref->hmi.setNodeStatus(i, ref->mailboxStatus[i]);             // Update Network status LEDs
     }
     ref->returnPayload |= allCorrect? 0x80000000 : 0x00000000;      // MSB is set in payload if all cards are correct -> game finished
     ref->mesh.setPayload(ref->returnPayload);                       // Send game info back to all mailboxes
@@ -65,9 +66,14 @@ void Office::update(void* pvParameter)
     switch(state)
     {
       case STATE_READY:
+        if(ref->hmi.getMode() == Hmi::LED_MODE_NONE)
+        {
+          ref->hmi.setMode(Hmi::LED_MODE_NODE_STATUS);
+        }
         if(allCorrect)
         {
           ref->hmi.setResultIndicator(ref->solution);
+          ref->hmi.setMode(Hmi::LED_MODE_SUCCESS);
           ref->hmi.playSound(Hmi::BUZZER_SUCCESS);
           state = STATE_WIN;
           stateTimer = millis();
@@ -77,14 +83,17 @@ void Office::update(void* pvParameter)
         if(ref->sys.getButtonState() || (millis() - stateTimer > SUCCESS_STATE_TIMEOUT * 1000))
         {
           ref->hmi.setResultIndicator(Hmi::LED_RESULT_NONE);
+          ref->hmi.setStatusIndicator(Hmi::LED_STATUS_OFF);
           ref->hmi.setMode(Hmi::LED_MODE_POWER_OFF);
           ref->hmi.playSound(Hmi::BUZZER_POWER_OFF);
           state = STATE_POWERDOWN;
         }
         break;
       case STATE_POWERDOWN:
-        if(ref->hmi.getMode() == Hmi::LED_MODE_OFF)
+        if(ref->hmi.getMode() == Hmi::LED_MODE_NONE)
         {
+          ref->mesh.end();
+          ref->hmi.end();
           ref->sys.powerDown();
         }
         break;
@@ -93,7 +102,7 @@ void Office::update(void* pvParameter)
         break;
     }
 
-    if((millis() - printTimer > PRINT_INTERVAL) && millis() > 10000)
+    if((millis() - printTimer > PRINT_INTERVAL) && millis() > 10000 && console)
     {
       printTimer = millis();
       ref->printInfo();
@@ -121,10 +130,10 @@ void Office::printInfo(void)
     if(i == 1) console.log.print("\n[OFFICE] Status:  |");
     switch(mailboxStatus[i])
     {
-      case MAILBOX_IGNORED:       console.print("  IGNORED");               break;
-      case MAILBOX_DISCONNECTED:  console[COLOR_RED].print("  DISCONN");    break;
-      case MAILBOX_CONNECTED:     console[COLOR_YELLOW].print("  CONNECT"); break;
-      case MAILBOX_ACTIVE:        console[COLOR_GREEN].print("   ACTIVE");  break;
+      case Hmi::NODE_IGNORED:       console.print("  IGNORED");               break;
+      case Hmi::NODE_DISCONNECTED:  console[COLOR_RED].print("  DISCONN");    break;
+      case Hmi::NODE_CONNECTED:     console[COLOR_YELLOW].print("  CONNECT"); break;
+      case Hmi::NODE_ACTIVE:        console[COLOR_GREEN].print("   ACTIVE");  break;
       default:                    console[COLOR_RED].print("  UNKNOWN");    break;
     } 
     console.print(" |");
@@ -173,13 +182,13 @@ bool Office::loadMailboxFile(const char* path)
 
   for(int i = 0; i < MAX_NODES_NUM; i++)
   {
-    mailboxStatus[i] = MAILBOX_IGNORED;
+    mailboxStatus[i] = Hmi::NODE_IGNORED;
     mailboxCompareCode[i] = -1;
   }
   for (JsonPair kv : root)
   {
     int i = strtol(kv.key().c_str(), NULL, 0);
-    mailboxStatus[i] = MAILBOX_DISCONNECTED;
+    mailboxStatus[i] = Hmi::NODE_DISCONNECTED;
     mailboxCompareCode[i] = strtoul(kv.value().as<const char*>(), NULL, 0);
   }
   file.close();

@@ -30,16 +30,24 @@ void System::feedWatchdog(void)
   esp_task_wdt_reset();
 }
 
-void System::powerDown(void)
+void System::powerDown(bool feedDog)
 {
   console.log.println("[SYSTEM] Power down system...");
   delay(10);
   digitalWrite(pinPowerOff, 1);
-  while(true) yield();
+  while(true)
+  {
+    if(feedDog)
+    {
+      feedWatchdog();
+    }
+    delay(100);
+  }
 }
 
 bool System::getButtonState(void)
 {
+  if(pinPowerButton == -1) return false;
   return !digitalRead(pinPowerButton);
 }
 

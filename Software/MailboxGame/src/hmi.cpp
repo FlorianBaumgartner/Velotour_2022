@@ -3,7 +3,7 @@
 #include "freertos/task.h"
 
 //#define log   DISABLE_MODULE_LEVEL
-//#define DISABLE_BUZZER
+#define DISABLE_BUZZER
 
 void Hmi::begin(void)
 {
@@ -11,15 +11,24 @@ void Hmi::begin(void)
   pinMode(pinBuzzer, OUTPUT);
   led.setPin(pinLed);
   led.updateLength(NUM_LEDS_STATUS + NUM_LEDS_RESULT + NUM_LEDS_NODE);
-  led.clear();
   led.begin();
+  led.clear();
   led.show();
 
   ledcSetup(BUZZER_PWM_CHANNEL, 1000, 8);       // Channel, Frequency, Resolution
   ledcAttachPin(pinBuzzer, BUZZER_PWM_CHANNEL);
   ledcWriteTone(BUZZER_PWM_CHANNEL, 0);
 
-  xTaskCreate(update, "task_hmi", 1024, this, 1, NULL);
+  initialized = true;
+  xTaskCreate(update, "task_hmi", 2048, this, 10, NULL);
+}
+
+void Hmi::end(void)
+{
+  initialized = false;
+  ledcWriteTone(BUZZER_PWM_CHANNEL, 0);
+  led.clear();
+  led.show();
 }
 
 void Hmi::setStatusIndicator(LedStatus status)
@@ -88,25 +97,26 @@ void Hmi::update(void* pvParameter)
   bool playing = false;
   int32_t buzzerTimer = -1;
 
-  while(true)
+  while(ref->initialized)
   {
     TickType_t task_last_tick = xTaskGetTickCount();
 
     // Status LED
+    uint8_t blinking = (millis() % 400) > 200? 255 : 0;
     uint8_t breathing = ref->gamma[map(abs((int)(millis() % 3000) - 1500), 0, 1500, 0, 255)];
     switch(ref->statusIndicator)
     {
       case LED_STATUS_OK:
-        ref->led.setPixelColor(0, ref->led.Color(0, 255, 0));   // Green steady
+        ref->led.setPixelColor(0, ref->led.Color(0, blinking, 0));   // Green blinking
         break;
       case LED_STATUS_BUSY:
         ref->led.setPixelColor(0, ref->led.Color(breathing, breathing, breathing));    // White breathing
         break;
       case LED_STATUS_ERROR:
-        ref->led.setPixelColor(0, ref->led.Color((millis() % 400) > 200? 255 : 0, 0, 0));   // Red blinking
+        ref->led.setPixelColor(0, ref->led.Color(blinking, 0, 0));   // Red blinking
         break;
       case LED_STATUS_LOW_BATTERY:
-        ref->led.setPixelColor(0, ref->led.Color(255, 255, 0));   // Yellow steady
+        ref->led.setPixelColor(0, ref->led.Color(blinking, blinking, 0));   // Yellow blinking
         break;
       default:
         ref->led.setPixelColor(0, 0);
@@ -141,7 +151,7 @@ void Hmi::update(void* pvParameter)
           }
           else
           {
-            ref->ledMode = LED_MODE_OFF;
+            ref->ledMode = LED_MODE_NONE;
           }
           break;
         case LED_MODE_POWER_OFF:
@@ -154,30 +164,34 @@ void Hmi::update(void* pvParameter)
           }
           else
           {
-            ref->ledMode = LED_MODE_OFF;
+            ref->ledMode = LED_MODE_NONE;
           }
           break;
         case LED_MODE_CARD_INSERTED:
           if(ref->animationRunning)
           {
             int j = (millis() - ref->animationTimer) / 100;
-            uint8_t c = (millis() % 400) > 200? 255 : 0;
+            uint8_t c = (millis() % 200) > 100? 255 : 0;
             ref->led.setPixelColor(l, ref->led.Color(c, c, c));     // White blinking for 2s
             if(j > 20) ref->animationRunning = false;
           }
           else
           {
-            ref->ledMode = LED_MODE_OFF;
+            ref->ledMode = LED_MODE_NONE;
           }
           break;
         case LED_MODE_SUCCESS:
           ref->animationRunning = false;
-          ref->led.setPixelColor(l, ref->led.Color(0, (millis() % 400) > 200? 255 : 0, 0));   // Green blinking
+          ref->led.setPixelColor(l, ref->led.Color(0, 255, 0));   // Green steady
           break;
         case LED_MODE_NODE_STATUS:
           ref->animationRunning = false;
           ref->led.setPixelColor(l, 0);   // LED OFF per default
-          if(ref->nodeStatus[i] == NODE_ACTIVE)
+          if(ref->nodeStatus[i] == NODE_DISCONNECTED)
+          {
+            ref->led.setPixelColor(l, ref->led.Color(255, 0, 0));     // Red steady
+          }
+          else if(ref->nodeStatus[i] == NODE_ACTIVE)
           {
             ref->led.setPixelColor(l, ref->led.Color(0, 255, 0));     // Green steady
           }
@@ -186,13 +200,15 @@ void Hmi::update(void* pvParameter)
             ref->led.setPixelColor(l, ref->led.Color(255, 255, 0));   // Yellow steady
           }
           break;
-        case LED_MODE_OFF:
+        case LED_MODE_NONE:
           ref->animationRunning = false;
           ref->led.setPixelColor(l, 0);
           break;
       }
     }
+    //taskENTER_CRITICAL(0);
     ref->led.show();
+    //taskEXIT_CRITICAL(0);
 
 
     if(ref->playing != playing)

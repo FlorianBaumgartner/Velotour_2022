@@ -7,22 +7,23 @@
 #define NUM_LEDS_STATUS           1
 #define NUM_LEDS_RESULT           3
 #define NUM_LEDS_NODE             10
-#define BUZZER_PWM_CHANNEL        1
+#define BUZZER_PWM_CHANNEL        0
 
 #define TASK_HMI_FREQ             20            // [Hz]
 
 class Hmi
 {
   public:
-    enum LedStatus {LED_STATUS_BUSY, LED_STATUS_OK, LED_STATUS_ERROR, LED_STATUS_LOW_BATTERY};
+    enum LedStatus {LED_STATUS_OFF, LED_STATUS_BUSY, LED_STATUS_OK, LED_STATUS_ERROR, LED_STATUS_LOW_BATTERY};
     enum LedResult {LED_RESULT_NONE, LED_RESULT_A, LED_RESULT_B, LED_RESULT_C};
-    enum LedMode {LED_MODE_OFF, LED_MODE_POWER_ON, LED_MODE_POWER_OFF, LED_MODE_SUCCESS, LED_MODE_CARD_INSERTED, LED_MODE_NODE_STATUS};
-    enum NodeStatus {NODE_DISCONNECTED, NODE_CONNECTED, NODE_ACTIVE};   // Active means, node is connected and card has been inserted
+    enum LedMode {LED_MODE_NONE, LED_MODE_POWER_ON, LED_MODE_POWER_OFF, LED_MODE_SUCCESS, LED_MODE_CARD_INSERTED, LED_MODE_NODE_STATUS};
+    enum NodeStatus {NODE_IGNORED, NODE_DISCONNECTED, NODE_CONNECTED, NODE_ACTIVE};   // Active means, node is connected and card has been inserted
     enum BuzzerSound {BUZZER_NONE, BUZZER_CARD_INSERTED, BUZZER_CARD_REMOVED, BUZZER_POWER_ON, BUZZER_POWER_OFF, BUZZER_SUCCESS, BUZZER_ERROR};
    
 
     Hmi(int pinLed, int pinBuzzer): pinLed(pinLed), pinBuzzer(pinBuzzer) {}
     void begin(void);
+    void end(void);
     void setStatusIndicator(LedStatus status);
     void setResultIndicator(LedResult result);
     void setMode(LedMode mode);
@@ -42,11 +43,12 @@ class Hmi
     Adafruit_NeoPixel led;
     LedStatus statusIndicator = LED_STATUS_BUSY;
     LedResult resultIndicator = LED_RESULT_NONE;
-    LedMode ledMode = LED_MODE_OFF;
+    LedMode ledMode = LED_MODE_NONE;
     NodeStatus nodeStatus[NUM_LEDS_NODE];
     BuzzerSound buzzerSound = BUZZER_NONE;
     uint32_t animationTimer = -1;
     bool animationRunning = false;
+    bool initialized = false;
 
     const Tone* melody = nullptr;
     int melodyLength = 0;
