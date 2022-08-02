@@ -1,8 +1,5 @@
 #include "console.h"
 
-static void usbEventCallback(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
-static volatile bool connected = false;
-
 bool Console::begin(void)
 {
   if(type == USBCDC_t)
@@ -87,9 +84,6 @@ void Console::interfaceTask(void *pvParameter)
     enabledOld = ref->enabled;
     enabledDelayed = (xTaskGetTickCount() > enabledTimer) && ref->enabled;
 
-    digitalWrite(33, connected);
-    //ref->stream.printf("connected: %d\n", connected);
-    //ref->stream.printf("interfaceOld: %d, ref->getInterfaceState(): %d, ", interfaceOld, ref->getInterfaceState());
     if(ref->getInterfaceState() && !interfaceOld)
     {
       interfaceTimer = xTaskGetTickCount() + INTERFACE_ACTIVE_DELAY;
@@ -110,8 +104,6 @@ void Console::interfaceTask(void *pvParameter)
       ref->stream.clearWriteError();
     }
     streamActiveOld = ref->streamActive;
-
-    //ref->stream.printf("ref->enabled: %d, ref->streamActive: %d, enabledDelayed: %d, interfaceDelayed: %d\n", ref->enabled, ref->streamActive, enabledDelayed, interfaceDelayed);
 
     vTaskDelayUntil(&task_last_tick, (const TickType_t) 1000 / INTERFACE_UPDATE_RATE);
   }
@@ -170,35 +162,25 @@ void Console::printStartupMessage(void)
   stream.println(CONSOLE_LOG);
 }
 
-void usbEventCallback(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
+void Console::usbEventCallback(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
-  if(event_base == ARDUINO_USB_CDC_EVENTS){
-      arduino_usb_cdc_event_data_t * data = (arduino_usb_cdc_event_data_t*)event_data;
-      switch (event_id){
-        case ARDUINO_USB_CDC_CONNECTED_EVENT:
-          //connected = !connected;
-          connected = true;
-          //HWSerial.println("CDC CONNECTED");
-          break;
-        case ARDUINO_USB_CDC_DISCONNECTED_EVENT:
-          //connected = !connected;
-          connected = false;
-          //HWSerial.println("CDC DISCONNECTED");
-          break;
-        case ARDUINO_USB_CDC_LINE_STATE_EVENT:
-          //connected = !connected;
-          //connected = true;
-          //HWSerial.printf("CDC LINE STATE: dtr: %u, rts: %u\n", data->line_state.dtr, data->line_state.rts);
-          break;
-        case ARDUINO_USB_CDC_LINE_CODING_EVENT:
-          //connected = !connected;
-          //HWSerial.printf("CDC LINE CODING: bit_rate: %u, data_bits: %u, stop_bits: %u, parity: %u\n", data->line_coding.bit_rate, data->line_coding.data_bits, data->line_coding.stop_bits, data->line_coding.parity);
-          break;
-        default:
-          break;
-      }
+  if(event_base == ARDUINO_USB_CDC_EVENTS)
+  {
+    arduino_usb_cdc_event_data_t * data = (arduino_usb_cdc_event_data_t*)event_data;
+    switch (event_id)
+    {
+      case ARDUINO_USB_CDC_CONNECTED_EVENT:
+        break;
+      case ARDUINO_USB_CDC_DISCONNECTED_EVENT:
+        break;
+      case ARDUINO_USB_CDC_LINE_STATE_EVENT:
+        break;
+      case ARDUINO_USB_CDC_LINE_CODING_EVENT:
+        break;
+      default:
+        break;
+    }
   }
-
 }
 
 

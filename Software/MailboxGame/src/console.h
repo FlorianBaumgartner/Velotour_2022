@@ -142,6 +142,7 @@ class Console: public Stream
     void printStartupMessage(void);
     static void writeTask(void *pvParameter);
     static void interfaceTask(void *pvParameter);
+    static void usbEventCallback(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
     bool getInterfaceState(void)
     {
       if(type == USBCDC_t)
@@ -210,7 +211,7 @@ class Console: public Stream
     inline size_t write(long n) {return write((uint8_t) n);}
     inline size_t write(unsigned int n) {return write((uint8_t) n);}
     inline size_t write(int n) {return write((uint8_t) n);}
-    size_t write(const uint8_t *buffer, size_t size);    
+    size_t write(const uint8_t *buffer, size_t size);
 };
 
 

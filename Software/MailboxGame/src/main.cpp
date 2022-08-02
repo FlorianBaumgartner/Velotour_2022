@@ -76,8 +76,6 @@ void setup()
   while(hmi.isPlaying()) delay(10);
   hmi.setStatusIndicator(error? Hmi::LED_STATUS_ERROR : Hmi::LED_STATUS_OK);
   hmi.playSound(error? Hmi::BUZZER_ERROR : Hmi::BUZZER_NONE);
-  
-  pinMode(33, OUTPUT);    // TODO: Remove
 }
 
 void loop()
@@ -109,8 +107,6 @@ void loop()
 
   sys.feedWatchdog();
   delay(50);
-
-  //digitalWrite(33, utils.isConnected());
 }
 
 void powerDown(void)
