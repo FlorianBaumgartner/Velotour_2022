@@ -1,20 +1,34 @@
-/*
- * Fleet-Monitor Software
- * Copyright (C) 2021 Institute of Networked Solutions OST
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
+/******************************************************************************
+* file    utils.cpp
+*******************************************************************************
+* brief   General utilities for file system support, MSC, configuration, etc.
+*******************************************************************************
+* author  Florian Baumgartner
+* version 1.0
+* date    2022-08-02
+*******************************************************************************
+* MIT License
+*
+* Copyright (c) 2022 Crelin - Florian Baumgartner
+*
+* Permission is hereby granted, free of charge, to any person obtaining a copy
+* of this software and associated documentation files (the "Software"), to deal
+* in the Software without restriction, including without limitation the rights
+* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell          
+* copies of the Software, and to permit persons to whom the Software is
+* furnished to do so, subject to the following conditions:
+*
+* The above copyright notice and this permission notice shall be included in
+* all copies or substantial portions of the Software.
+*
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+* SOFTWARE.
+******************************************************************************/
 
 #include "utils.h"
 #include "console.h"
@@ -245,59 +259,59 @@ static void msc_flush_cb(void)
 // fatfs diskio
 //--------------------------------------------------------------------+
 extern "C" {
-DSTATUS disk_status(BYTE pdrv) {
-  (void)pdrv;
-  return 0;
-}
-
-DSTATUS disk_initialize(BYTE pdrv) {
-  (void)pdrv;
-  return 0;
-}
-
-DRESULT disk_read(BYTE pdrv,     // Physical drive nmuber to identify the drive
-                  BYTE* buff,    // Data buffer to store read data
-                  DWORD sector,  // Start sector in LBA
-                  UINT count     // Number of sectors to read
-) {
-  (void)pdrv;
-  return flash.readBlocks(sector, buff, count) ? RES_OK : RES_ERROR;
-}
-
-DRESULT disk_write(BYTE pdrv,         // Physical drive nmuber to identify the drive
-                   const BYTE* buff,  // Data to be written
-                   DWORD sector,      // Start sector in LBA
-                   UINT count         // Number of sectors to write
-) {
-  (void)pdrv;
-  return flash.writeBlocks(sector, buff, count) ? RES_OK : RES_ERROR;
-}
-
-DRESULT disk_ioctl(BYTE pdrv,  // Physical drive nmuber (0..)
-                   BYTE cmd,   // Control code
-                   void* buff  // Buffer to send/receive control data
-) {
-  (void)pdrv;
-
-  switch (cmd) {
-    case CTRL_SYNC:
-      flash.syncBlocks();
-      return RES_OK;
-
-    case GET_SECTOR_COUNT:
-      *((DWORD*)buff) = flash.size() / 512;
-      return RES_OK;
-
-    case GET_SECTOR_SIZE:
-      *((WORD*)buff) = 512;
-      return RES_OK;
-
-    case GET_BLOCK_SIZE:
-      *((DWORD*)buff) = 8;  // erase block size in units of sector size
-      return RES_OK;
-
-    default:
-      return RES_PARERR;
+  DSTATUS disk_status(BYTE pdrv) {
+    (void)pdrv;
+    return 0;
   }
-}
+
+  DSTATUS disk_initialize(BYTE pdrv) {
+    (void)pdrv;
+    return 0;
+  }
+
+  DRESULT disk_read(BYTE pdrv,     // Physical drive nmuber to identify the drive
+                    BYTE* buff,    // Data buffer to store read data
+                    DWORD sector,  // Start sector in LBA
+                    UINT count     // Number of sectors to read
+  ) {
+    (void)pdrv;
+    return flash.readBlocks(sector, buff, count) ? RES_OK : RES_ERROR;
+  }
+
+  DRESULT disk_write(BYTE pdrv,         // Physical drive nmuber to identify the drive
+                    const BYTE* buff,  // Data to be written
+                    DWORD sector,      // Start sector in LBA
+                    UINT count         // Number of sectors to write
+  ) {
+    (void)pdrv;
+    return flash.writeBlocks(sector, buff, count) ? RES_OK : RES_ERROR;
+  }
+
+  DRESULT disk_ioctl(BYTE pdrv,  // Physical drive nmuber (0..)
+                    BYTE cmd,   // Control code
+                    void* buff  // Buffer to send/receive control data
+  ) {
+    (void)pdrv;
+
+    switch (cmd) {
+      case CTRL_SYNC:
+        flash.syncBlocks();
+        return RES_OK;
+
+      case GET_SECTOR_COUNT:
+        *((DWORD*)buff) = flash.size() / 512;
+        return RES_OK;
+
+      case GET_SECTOR_SIZE:
+        *((WORD*)buff) = 512;
+        return RES_OK;
+
+      case GET_BLOCK_SIZE:
+        *((DWORD*)buff) = 8;  // erase block size in units of sector size
+        return RES_OK;
+
+      default:
+        return RES_PARERR;
+    }
+  }
 }

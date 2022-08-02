@@ -1,3 +1,35 @@
+/******************************************************************************
+* file    mailbox.cpp
+*******************************************************************************
+* brief   Main class for handling all mailbox related tasks
+*******************************************************************************
+* author  Florian Baumgartner
+* version 1.0
+* date    2022-08-02
+*******************************************************************************
+* MIT License
+*
+* Copyright (c) 2022 Crelin - Florian Baumgartner
+*
+* Permission is hereby granted, free of charge, to any person obtaining a copy
+* of this software and associated documentation files (the "Software"), to deal
+* in the Software without restriction, including without limitation the rights
+* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell          
+* copies of the Software, and to permit persons to whom the Software is
+* furnished to do so, subject to the following conditions:
+*
+* The above copyright notice and this permission notice shall be included in
+* all copies or substantial portions of the Software.
+*
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+* SOFTWARE.
+******************************************************************************/
+
 #include "mailbox.h"
 #include "console.h"
 #include "freertos/task.h"
@@ -41,6 +73,18 @@ void Mailbox::update(void* pvParameter)
     }
     ref->mesh.setPayload(card);
 
+    for(int i = 0; i < MAX_NODES_NUM; i++)
+    {
+      if(i == ref->mesh.getPersonalId())
+      {
+         ref->hmi.setNodeStatus(i, ref->mesh.getNodeState(0)? Hmi::NODE_ACTIVE : Hmi::NODE_DISCONNECTED);
+      }
+      else
+      {
+        ref->hmi.setNodeStatus(i, Hmi::NODE_IGNORED);
+      }
+    }
+
     switch(state)
     {
       case STATE_READY:
@@ -62,6 +106,10 @@ void Mailbox::update(void* pvParameter)
           console.warning.printf("[MAILBOX] Timout occured: No card has been inserted within the last %d s\n", NO_CARD_TIMEOUT);
           state = STATE_POWERDOWN;
         }
+        else if(ref->hmi.getMode() == Hmi::LED_MODE_NONE)
+        {
+          ref->hmi.setMode(Hmi::LED_MODE_NODE_STATUS);
+        }
         break;
       case STATE_ACTIVE:
         if(allCorrect)
@@ -78,6 +126,10 @@ void Mailbox::update(void* pvParameter)
           state = STATE_READY;
           console.log.println("[MAILBOX] Card removed");
           cardTimeout = millis();
+        }
+        else if(ref->hmi.getMode() == Hmi::LED_MODE_NONE)
+        {
+          ref->hmi.setMode(Hmi::LED_MODE_NODE_STATUS);
         }
         break;
       case STATE_WIN:
