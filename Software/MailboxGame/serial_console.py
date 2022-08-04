@@ -30,7 +30,6 @@
 # SOFTWARE.
 ###############################################################################
 
-import os
 import sys
 import time
 import threading
@@ -67,15 +66,16 @@ class Port:
 class Console(threading.Thread):
     def __init__(self):
         self.UPDATE_FREQ = 10    # [Hz]
-        self.TIMEOUT     = 5     # [s]
+        self.TIMEOUT     = 6     # [s]
         
         threading.Thread.__init__(self)
         self._data = ""
         self.ser = None
         self.runThread = True
+        self.processing = False
 
 
-    def getPorts(self):
+    def getPorts():
         ports = []
         for port, desc, hwid in sorted(serial.tools.list_ports.comports()):
             try:
@@ -92,7 +92,7 @@ class Console(threading.Thread):
         while(self.runThread):
             try:
                 time.sleep(1 / self.UPDATE_FREQ)
-                ser = serial.Serial(comPort, 115200, timeout=self.TIMEOUT)
+                ser = serial.Serial(comPort, 115200, timeout=self.TIMEOUT)         
 
             except serial.SerialException:
                 try:
@@ -106,10 +106,9 @@ class Console(threading.Thread):
             while self.runThread:
                 try:
                     self._data = ser.read().decode('UTF-8');
-                    if(not self._data):
-                        break
-                    sys.stdout.write(self._data)
-                    sys.stdout.flush()
+                    if self._data:
+                        sys.stdout.write(self._data)
+                        sys.stdout.flush()
                     
                 except serial.SerialException:
                     ser.close()
@@ -118,6 +117,11 @@ class Console(threading.Thread):
                     pass
                 except KeyboardInterrupt:
                     self.runThread = False
+                    self.processing = False
+        try:
+            ser.close()
+        except UnboundLocalError:
+            pass
 
     def getData(self):
         return self._data
@@ -133,8 +137,6 @@ if __name__ == '__main__':
     else:
         comPort = sys.argv[1]
         # print(f"Start Console on port {comPort}\n")
-    
-    # print(f"Process ID: {os.getpid()}")
     
     # print(f"Process ID: {os.getpid()}")
     # for p in Console.getPorts():

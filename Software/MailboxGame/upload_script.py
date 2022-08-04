@@ -32,11 +32,15 @@
 
 Import("env")
 
+import ast
 import time
 import glob
 import shutil
+import subprocess
 from uf2_loader import UF2Loader
 from dfu_reboot import DFU_Reboot
+
+DEBUG = False
 
 # please keep $SOURCE variable, it will be replaced with a path to firmware
 
@@ -58,17 +62,40 @@ def on_upload(source, target, env):
     firmware_path = str(source[0])
     loader = UF2Loader()
     dfu = DFU_Reboot()
-
-    usb_serial = str(";".join(arguments).partition("USB_SERIAL=")[-1].split(";")[0])
-    usb_vid = int(";".join(arguments).partition("USB_VID=")[-1].split(";")[0], base=16)
-    usb_pid = int(";".join(arguments).partition("USB_PID=")[-1].split(";")[0], base=16)
-    compare_Serial = ";".join(arguments).partition("COMPARE_SERIAL_NUMBER=")[-1].split(";")[0].lower() == "true"
-
-    #print(f"firmware_path: {firmware_path}")
-    #print(f"USB_SERIAL: {usb_serial}, USB_VID: {usb_vid:04X}, USB_PID: {usb_pid:04X}, COMPARE_SERIAL_NUMBER: {compare_Serial}")
-    #print(firmware_path)
-    #print(firmware_path.rsplit('.', 1)[0] + ".UF2")
-
+    
+    def getParameterString(keyword):
+        paramStr = ";" + ";".join(arguments)
+        index = paramStr.find(";" + keyword)
+        if(index == -1):
+            index = paramStr.find(keyword)
+        return paramStr[index + len(keyword)::].split(";")[0].split("=")[-1]
+        
+    usb_serial = [getParameterString("USB_SERIAL").strip('"').strip("'")]
+    usb_vid = int(getParameterString("USB_VID"), base=16)
+    usb_pid = int(getParameterString("USB_PID"), base=16)
+    compare_Serial = getParameterString("COMPARE_SERIAL_NUMBER").lower() == "true"
+    use_serial_number_list = getParameterString("USE_SERIAL_NUMBER_LIST").lower() == "true"
+    enable_automatic_console = getParameterString("ENABLE_AUTOMATIC_CONSOLE").lower() == "true"
+    compare_vid_pid_console = getParameterString("COMPARE_VID_PID_CONSOLE").lower() == "true"
+    use_tabs_console = getParameterString("USE_TABS_CONSOLE").lower() == "true"
+    serial_number_list = ast.literal_eval(getParameterString("SERIAL_NUMBER_LIST"))
+     
+    if DEBUG:
+        print(f"USB_SERIAL: {usb_serial}, USB_VID: {usb_vid:04X}, USB_PID: {usb_pid:04X}, COMPARE_SERIAL_NUMBER: {compare_Serial}")
+        print(f"USE_SERIAL_NUMBER_LIST: {use_serial_number_list}, SERIAL_NUMBER_LIST: {serial_number_list}, ENABLE_AUTOMATIC_CONSOLE: {enable_automatic_console}, COMPARE_VID_PID_CONSOLE: {compare_vid_pid_console}, USE_TABS_CONSOLE: {use_tabs_console}")
+        print(f"firmware_path: {firmware_path}")
+        print(firmware_path)
+        print(firmware_path.rsplit('.', 1)[0] + ".UF2")
+    
+    if(use_serial_number_list):
+        usb_serial = serial_number_list
+    
+    if(enable_automatic_console):
+        command = ["python", "serial_terminal.py"]
+        command += [str(use_tabs_console), str(compare_vid_pid_console), str(compare_Serial), str(usb_vid), str(usb_pid), str(usb_serial)]
+        CREATE_NO_WINDOW = 0x08000000
+        subprocess.Popen(command, close_fds=True, creationflags=CREATE_NO_WINDOW, shell = True)
+        
     firmwareFilePath = firmware_path.rsplit('.', 1)[0] + ".UF2"
     loader.save(firmware_path, firmwareFilePath)
 
@@ -78,13 +105,13 @@ def on_upload(source, target, env):
         for d in devices:
             if(d['ser'] == "0000000000000001"):
                 devices.remove(d)
-                print("Removed fake device: '0000000000000001'")
+                print("Removed fake device: ['0000000000000001']")
         if not devices:
             return ['No devices found for entering bootloader, check if "libusb-win32" driver has been installed for "TinyUSB DFU_RT (Interface 1)"']
         if(compare_Serial):
-            devicesFiltered = [d for d in devices if d["ser"] == usb_serial]
+            devicesFiltered = [d for d in devices if d["ser"] in usb_serial]
             if not devicesFiltered:
-                return [f"No device with matching serial number {[usb_serial]} found, available devices: {[d['ser'] for d in devices]}"]  # Bug in python (scons) when string has more than 000 in row, then not red output?
+                return [f"No device with matching serial number {usb_serial} found, available devices: {[d['ser'] for d in devices]}"]  # Bug in python (scons) when string has more than 000 in row, then not red output?
             devices = devicesFiltered
         print(f"{len(devices)} Device{'s' if len(devices) > 1 else ''} found: {[d['ser'] for d in devices]}")
         status = dfu.reboot(devices)
