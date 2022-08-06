@@ -32,6 +32,7 @@
 
 #include "mailbox.h"
 #include "console.h"
+#include "utils.h"
 #include "freertos/task.h"
 
 //#define DISABLE_NFC
@@ -144,7 +145,7 @@ void Mailbox::update(void* pvParameter)
         }
         break;
       case STATE_POWERDOWN:
-        if(ref->hmi.getMode() == Hmi::LED_MODE_NONE)
+        if(ref->hmi.getMode() == Hmi::LED_MODE_NONE && !utils.isConnected())
         {
           ref->mesh.end();
           ref->hmi.end();
@@ -172,7 +173,7 @@ bool Mailbox::initializeNfc(void)
     }
     mfrc522.PCD_Init();     // Init MFRC522
     uint8_t check = mfrc522.PCD_ReadRegister(MFRC522::VersionReg);
-    if(check != MFRC522_VERSION_ID)
+    if(check == 0xFF)
     {
       console.error.printf("[MAILBOX] Could not initialize NFC chip (ID Register: %02X)\n", check);
       return false;
@@ -186,7 +187,7 @@ uint32_t Mailbox::readCardData(void)
 {
   uint8_t req_buff[2];
   uint8_t req_buff_size = sizeof(req_buff);
-  if(mfrc522.PCD_ReadRegister(MFRC522::VersionReg) != MFRC522_VERSION_ID) return -1;
+  if(mfrc522.PCD_ReadRegister(MFRC522::VersionReg) == 0xFF) return -1;
   mfrc522.PCD_StopCrypto1();
   mfrc522.PICC_HaltA();
   mfrc522.PICC_WakeupA(req_buff, &req_buff_size);

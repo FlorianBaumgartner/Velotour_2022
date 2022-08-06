@@ -139,7 +139,7 @@ void Office::update(void* pvParameter)
         }
         break;
       case STATE_POWERDOWN:
-        if(ref->hmi.getMode() == Hmi::LED_MODE_NONE)
+        if(ref->hmi.getMode() == Hmi::LED_MODE_NONE && !utils.isConnected())
         {
           ref->mesh.end();
           ref->hmi.end();

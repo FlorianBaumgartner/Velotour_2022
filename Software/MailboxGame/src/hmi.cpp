@@ -43,6 +43,7 @@ void Hmi::begin(void)
   pinMode(pinBuzzer, OUTPUT);
   led.setPin(pinLed);
   led.updateLength(NUM_LEDS_STATUS + NUM_LEDS_RESULT + NUM_LEDS_NODE);
+  led.setBrightness(LED_MAX_BRIGHTNESS);
   led.begin();
   led.clear();
   led.show();
@@ -163,9 +164,9 @@ void Hmi::update(void* pvParameter)
     }
     switch(ref->resultIndicator)
     {
-      case LED_RESULT_A: ref->led.setPixelColor(NUM_LEDS_STATUS + 0, ref->led.Color(255, 255, 255)); break;
-      case LED_RESULT_B: ref->led.setPixelColor(NUM_LEDS_STATUS + 1, ref->led.Color(255, 255, 255)); break;
-      case LED_RESULT_C: ref->led.setPixelColor(NUM_LEDS_STATUS + 2, ref->led.Color(255, 255, 255)); break;
+      case LED_RESULT_A: ref->led.setPixelColor(NUM_LEDS_STATUS + 0, ref->led.Color(0, 255, 0)); break;
+      case LED_RESULT_B: ref->led.setPixelColor(NUM_LEDS_STATUS + 1, ref->led.Color(0, 255, 0)); break;
+      case LED_RESULT_C: ref->led.setPixelColor(NUM_LEDS_STATUS + 2, ref->led.Color(0, 255, 0)); break;
       default: break;
     }
 
@@ -180,7 +181,7 @@ void Hmi::update(void* pvParameter)
           {
             int j = (millis() - ref->animationTimer) / 100;
             uint8_t c = abs(i * 10 - 45) / 10 <= j? 255 : 0;
-            ref->led.setPixelColor(l, ref->led.Color(c, c, c));
+            ref->led.setPixelColor(l, ref->led.Color(0, 0, c));
             if(j > 12) ref->animationRunning = false;
           }
           else
@@ -193,7 +194,7 @@ void Hmi::update(void* pvParameter)
           {
             int j = (millis() - ref->animationTimer) / 100;
             uint8_t c = 4 - abs(i * 10 - 45) / 10 <= j? 255 : 0;
-            ref->led.setPixelColor(l, ref->led.Color(c, c, c));
+            ref->led.setPixelColor(l, ref->led.Color(0, 0, c));
             if(j > 12) ref->animationRunning = false;
           }
           else
@@ -206,7 +207,7 @@ void Hmi::update(void* pvParameter)
           {
             int j = (millis() - ref->animationTimer) / 100;
             uint8_t c = (millis() % 200) > 100? 255 : 0;
-            ref->led.setPixelColor(l, ref->led.Color(c, c, c));     // White blinking for 2s
+            ref->led.setPixelColor(l, ref->led.Color(0, 0, c));     // Blue blinking for 2s
             if(j > 20) ref->animationRunning = false;
           }
           else
@@ -216,7 +217,7 @@ void Hmi::update(void* pvParameter)
           break;
         case LED_MODE_SUCCESS:
           ref->animationRunning = false;
-          ref->led.setPixelColor(l, ref->led.Color(0, 255, 0));   // Green steady
+          ref->led.setPixelColor(l, ref->led.Color(0, 180, 0));   // Green steady
           break;
         case LED_MODE_NODE_STATUS:
           ref->animationRunning = false;

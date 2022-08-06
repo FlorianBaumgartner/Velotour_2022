@@ -62,3 +62,7 @@ class Utils
 
     static void update(void* pvParameter);
 };
+
+#ifndef USE_CUSTOM_UTILS
+  extern Utils utils;
+#endif

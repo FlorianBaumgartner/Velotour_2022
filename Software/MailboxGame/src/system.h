@@ -36,7 +36,7 @@
 #include <Arduino.h>
 
 #define MEASUREMENT_AVR_NUM       10            // [#]
-#define MEASUREMENT_FACTOR        1.0000        // [#]
+#define MEASUREMENT_FACTOR        1567.7761     // [#]
 
 class System
 {

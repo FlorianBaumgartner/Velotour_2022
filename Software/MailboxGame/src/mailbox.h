@@ -43,7 +43,6 @@
 #define TASK_MAILBOX_FREQ         10            // [Hz]
 #define WIN_STATE_TIMEOUT         120           // [s]
 #define NO_CARD_TIMEOUT           20            // [s]
-#define MFRC522_VERSION_ID        0x92
 
 class Mailbox
 {

@@ -40,6 +40,7 @@
 #define NUM_LEDS_RESULT           3
 #define NUM_LEDS_NODE             10
 #define BUZZER_PWM_CHANNEL        1
+#define LED_MAX_BRIGHTNESS        150
 
 #define TASK_HMI_FREQ             30            // [Hz]
 

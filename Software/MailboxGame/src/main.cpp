@@ -41,27 +41,25 @@
 #include "mailbox.h"
 
 #define USER_BTN          0
-#define PWR_OFF           -1    // 1
-#define PWR_BTN           -1    // 2
-#define BAT_MSR           -1    // 3
-#define NFC_RST           1     // 21
+#define PWR_OFF           1
+#define PWR_BTN           2
+#define BAT_MSR           3
+#define NFC_RST           21
 #define NFC_IRQ           26
-#define NFC_SDA           3     // 33
-#define NFC_SCL           2     // 34
+#define NFC_SDA           33
+#define NFC_SCL           34
 #define EXT_A             35
 #define EXT_B             36
 #define EXT_C             37
 #define EXT_D             38
-#define SYS_LED           40    // 45
-#define SYS_BZR           4     // 46
+#define SYS_LED           45
+#define SYS_BZR           44    // RDX-Pin
 
 #define WATCHDOG_TIMEOUT  10    // [s]
 #define LOW_BATTERY_SOC   30    // [%]
 #define MIN_BATTERY_SOC   10    // [%]
 
-
 Mesh mesh;
-Utils utils;
 Hmi hmi(SYS_LED, SYS_BZR);
 System sys(PWR_OFF, PWR_BTN, BAT_MSR);
 Office office(sys, hmi, mesh);
@@ -130,7 +128,7 @@ void loop()
       console.warning.printf("[MAIN] Battery state critical: %d%%\n", soc);
     }
   }
-  if(soc < MIN_BATTERY_SOC)
+  if(soc < MIN_BATTERY_SOC && !utils.isConnected())
   {
     console.error.printf("[MAIN] Low Battery! (%d%%)\n", soc);
     powerDown();

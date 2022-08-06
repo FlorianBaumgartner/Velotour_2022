@@ -34,15 +34,15 @@
 #include "console.h"
 #include "esp_task_wdt.h"
 
-//#define log   DISABLE_MODULE_LEVEL
-#define DISABLE_BATTERY_MEASUREMENT
+#define log   DISABLE_MODULE_LEVEL
+//#define DISABLE_BATTERY_MEASUREMENT
 
 void System::begin(uint32_t watchdogTimeout)
 {
   digitalWrite(pinPowerOff, 0);
-  pinMode(pinPowerButton, OUTPUT);
+  pinMode(pinPowerOff, OUTPUT);
   pinMode(pinPowerButton, INPUT_PULLUP);
-  pinMode(pinBatMsr, INPUT);
+  analogSetAttenuation(ADC_11db);
   if(watchdogTimeout > 0)
   {
     startWatchdog(watchdogTimeout);
@@ -96,12 +96,24 @@ uint8_t System::getBatteryPercentage(void)
   }
   voltage /= (float)MEASUREMENT_AVR_NUM;
   voltage /= (float)MEASUREMENT_FACTOR;
+
+  static bool printedWarning = false;
+  if(voltage < 0.2)
+  {
+    if(!printedWarning)
+    {
+      console.warning.printf("[SYSTEM] No Battery detected (%.2f V)\n", voltage);
+      printedWarning = true;
+    }
+    return 100;
+  }
   
   uint16_t soc = 0;
   for (soc = 0; soc <= 100; soc++)
   {
     if (voltage >= batteryVoltagePercentage[soc]) break;
   }
-  console.log.printf("[SYSTEM] Battery Measurement: %.2f V (%d%%)\n", voltage, max(100 - soc, 0));
-  return max(100 - soc, 0);
+  soc = max(100 - soc, 0);
+  console.log.printf("[SYSTEM] Battery Measurement: %.2f V (%d%%)\n", voltage, soc);
+  return soc;
 }

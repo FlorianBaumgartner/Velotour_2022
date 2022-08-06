@@ -315,3 +315,8 @@ extern "C" {
     }
   }
 }
+
+
+#ifndef USE_CUSTOM_UTILS
+  Utils utils;
+#endif
