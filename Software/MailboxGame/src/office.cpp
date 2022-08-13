@@ -49,6 +49,23 @@ bool Office::begin(void)
     console.error.println("[OFFICE] Could not read office configuration file");
     return false;
   }
+  int8_t correctCountFile = 0;
+  for(int i = 0; i < MAX_NODES_NUM; i++)
+  {
+    correctCountFile += mailboxStatus[i] != Hmi::NODE_IGNORED;
+  }
+  int8_t correctCountReduction = 0;
+  for(int i = 0; i < 4; i++)
+  {
+    if(sys.getExtSwitchState() & (0x01 << (3 - i)))
+    {
+      correctCountReduction = 4 - i;
+      break;
+    }
+  }
+  minCountCorrectNodes = max(correctCountFile - correctCountReduction, 0);
+  console.log.printf("[OFFICE] Number of correct nodes in file: %d, effective number of correct nodes: %d (Reduction of %d)\n",
+    correctCountFile, minCountCorrectNodes, correctCountReduction);
 
   xTaskCreate(update, "task_office", 2048, this, 1, NULL);
   console.ok.println("[OFFICE] Initialization successfull!");
@@ -60,15 +77,15 @@ void Office::update(void* pvParameter)
 {
   Office* ref = (Office*)pvParameter;
   uint32_t printTimer = 0;
-  uint32_t stateTimer = -1;
+  uint32_t stateTimer = millis();
   State state = STATE_READY;
-  bool allCorrect = false;
 
   while(true)
   {
     TickType_t task_last_tick = xTaskGetTickCount();
 
-    bool check = true;
+    uint8_t numOnline = 0;
+    uint8_t numCorrect = 0;
     ref->returnPayload = 0x00000000;                // Divided into 2-Bit node status segments: 00 = ignored node, 01 = disconnected, 10 = wrong code, 11 = correct code
     for(int i = 0; i < MAX_NODES_NUM; i++)
     {
@@ -77,6 +94,7 @@ void Office::update(void* pvParameter)
         ref->mailboxStatus[i] = Hmi::NODE_DISCONNECTED;
         if(ref->mesh.getNodeState(i))               // Check if node is present in network
         {
+          numOnline++;
           ref->mailboxStatus[i] = ref->mesh.getNodePayload(i) == -1? Hmi::NODE_CONNECTED : Hmi::NODE_ACTIVE;
         }
 
@@ -89,7 +107,7 @@ void Office::update(void* pvParameter)
         {
           ref->returnPayload |= 0x01 << i * 2;                      // Shows that node has not yet joined the network
         }
-        check &= nodeCorrect;
+        numCorrect += nodeCorrect;                                  // Increment count of correct nodes if code matches
       }
       if(i == 0 && SHOW_OWN_NODE_STATUS)
       {
@@ -100,9 +118,11 @@ void Office::update(void* pvParameter)
         ref->hmi.setNodeStatus(i, ref->mailboxStatus[i]);           // Update Network status LEDs
       }
     }
-    allCorrect |= check;                                            // Once all cards are correct, keep state even if removed
+
+    bool allCorrect = numCorrect >= ref->minCountCorrectNodes;      // Once all cards are correct, keep state even if removed
     ref->returnPayload |= allCorrect? 0x80000000 : 0x00000000;      // MSB is set in payload if all cards are correct -> game finished
     ref->mesh.setPayload(ref->returnPayload);                       // Send game info back to all mailboxes
+    ref->currentNumCorrect = numCorrect;
 
     if((millis() - printTimer > PRINT_INTERVAL) && millis() > 10000 && console && state == STATE_READY)
     {
@@ -125,6 +145,19 @@ void Office::update(void* pvParameter)
           console.log.println("[OFFICE] All cards are correct -> Go to win state");
           state = STATE_WIN;
           stateTimer = millis();
+        }
+        if(numOnline > 0)                                           // As long as some mailboxes are online don't go into timeout
+        {
+          stateTimer = millis();
+        }
+        if(ref->sys.getButtonState() || (millis() - stateTimer > NO_MAILBOX_TIMEOUT * 1000))
+        {
+          ref->hmi.setResultIndicator(Hmi::LED_RESULT_NONE);
+          ref->hmi.setStatusIndicator(Hmi::LED_STATUS_OFF);
+          ref->hmi.setMode(Hmi::LED_MODE_POWER_OFF);
+          ref->hmi.playSound(Hmi::BUZZER_POWER_OFF);
+          console.log.println("[OFFICE] Enter Powerdown sequence (command received or timeout occured)");
+          state = STATE_POWERDOWN;
         }
         break;
       case STATE_WIN:
@@ -172,7 +205,8 @@ void Office::printInfo(bool forceUpdate)
   {
     console.print("\n[OFFICE] ");
     console.printTimestamp();
-    console.print("\n[OFFICE] **********");
+    console.printf(" - Correct Nodes: %d/%d\n", currentNumCorrect, minCountCorrectNodes);
+    console.print("[OFFICE] **********");
     for(int i = 1; i < MAX_NODES_NUM; i++)
     {
       console.print("***********");

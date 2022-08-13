@@ -33,23 +33,8 @@
 # Use Zadig 2.7 (or later) to install drivers:
 # Install driver for "TinyUSB DFU_RT (Interface x)": libusb-win32 (v1.2.6.0)
 
-try:
-    import usb.core
-    import usb.backend.libusb1
-except ModuleNotFoundError:
-    print("USB Modules not found, try to install them...")
-    import pip
-    def install(package):
-        if hasattr(pip, 'main'):
-            pip.main(['install', package])
-        else:
-            pip._internal.main(['install', package])
-
-    install("libusb")
-    install("pyusb")
-    import usb.core
-    import usb.backend.libusb1
-    print("USB Modules successfully installed and imported!")
+import usb.core
+import usb.backend.libusb1
 
 
 class DFU_Reboot:

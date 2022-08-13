@@ -39,14 +39,19 @@
 
 void System::begin(uint32_t watchdogTimeout)
 {
-  digitalWrite(pinPowerOff, 0);
-  pinMode(pinPowerOff, OUTPUT);
-  pinMode(pinPowerButton, INPUT_PULLUP);
-  analogSetAttenuation(ADC_11db);
-  if(watchdogTimeout > 0)
+  if(!watchdogStarted && watchdogTimeout > 0)
   {
     startWatchdog(watchdogTimeout);
   }
+
+  digitalWrite(pinPowerOff, 0);
+  pinMode(pinPowerOff, OUTPUT);
+  pinMode(pinPowerButton, INPUT_PULLUP);
+  pinMode(pinExtA, INPUT_PULLUP);
+  pinMode(pinExtB, INPUT_PULLUP);
+  pinMode(pinExtC, INPUT_PULLUP);
+  pinMode(pinExtD, INPUT_PULLUP);
+  analogSetAttenuation(ADC_11db);
 }
 
 void System::startWatchdog(uint32_t seconds)
@@ -55,6 +60,7 @@ void System::startWatchdog(uint32_t seconds)
   esp_task_wdt_add(NULL);             // Add current thread to WDT watch
   esp_task_wdt_reset();
   console.log.printf("[SYSTEM] Watchdog started with timeout of %d s\n", seconds);
+  watchdogStarted = true;
 }
 
 void System::feedWatchdog(void)
@@ -116,4 +122,14 @@ uint8_t System::getBatteryPercentage(void)
   soc = max(100 - soc, 0);
   console.log.printf("[SYSTEM] Battery Measurement: %.2f V (%d%%)\n", voltage, soc);
   return soc;
+}
+
+uint8_t System::getExtSwitchState(void)
+{
+  uint8_t data = 0x00;
+  data |= !digitalRead(pinExtA) << 0;
+  data |= !digitalRead(pinExtB) << 1;
+  data |= !digitalRead(pinExtC) << 2;
+  data |= !digitalRead(pinExtD) << 3;
+  return data;
 }

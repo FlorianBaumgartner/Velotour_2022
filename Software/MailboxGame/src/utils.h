@@ -49,9 +49,9 @@ class Utils
     bool isUpdated(bool clearFlag = true);
     bool isConnected(void);
     bool format(const char* labelName);
-    const char* getSerialNumber(void) {return serial;}
-    const char* getSsid(void) {return (ssid[0] == '\0')? nullptr : ssid;}
-    const char* getPassword(void) {return (password[0] == '\0')? nullptr : password;}
+    inline const char* getSerialNumber(void) {return serial;}
+    inline const char* getSsid(void) {return ssid;}
+    inline const char* getPassword(void) {return password;}
     operator bool() const {return mscReady;}
 
   private:

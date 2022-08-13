@@ -41,18 +41,27 @@
 class System
 {
   public:
-    System(int pinPowerOff, int pinPowerButton, int pinBatMsr): pinPowerOff(pinPowerOff), pinPowerButton(pinPowerButton), pinBatMsr(pinBatMsr) {}
+    System(int pinPowerOff, int pinPowerButton, int pinBatMsr, int pinExtA, int pinExtB, int pinExtC, int pinExtD):
+      pinPowerOff(pinPowerOff), pinPowerButton(pinPowerButton), pinBatMsr(pinBatMsr),
+      pinExtA(pinExtA), pinExtB(pinExtB), pinExtC(pinExtC), pinExtD(pinExtD) {}
     void begin(uint32_t watchdogTimeout = 0);
     void startWatchdog(uint32_t seconds);
     void feedWatchdog(void);
     void powerDown(bool feedDog = false);
     bool getButtonState(void);
     uint8_t getBatteryPercentage(void);
+    uint8_t getExtSwitchState(void);
 
   private:
     const int pinPowerOff;
     const int pinPowerButton;
     const int pinBatMsr;
+    const int pinExtA;
+    const int pinExtB;
+    const int pinExtC;
+    const int pinExtD;
+
+    bool watchdogStarted = false;
 
     const float batteryVoltagePercentage [101] =
     {

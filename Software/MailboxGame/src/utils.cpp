@@ -105,11 +105,6 @@ bool Utils::begin(const char* labelName, bool forceFormat)
     status = false;
   }
 
-  usb_msc.setID(USB_MANUFACTURER, USB_PRODUCT, FIRMWARE_VERSION);
-  usb_msc.setReadWriteCallback(msc_read_cb, msc_write_cb, msc_flush_cb);  // Set callback
-  usb_msc.setCapacity(flash.size() / 512, 512);     // Set disk size, block size should be 512 regardless of spi flash page size
-  usb_msc.begin();
-
   USB.VID(vid);
   USB.PID(pid);
   USB.serialNumber(serial);
@@ -118,6 +113,11 @@ bool Utils::begin(const char* labelName, bool forceFormat)
   USB.manufacturerName(USB_MANUFACTURER);
   USB.onEvent(usbEventCallback);
   USB.begin();
+
+  usb_msc.setID(USB_MANUFACTURER, USB_PRODUCT, FIRMWARE_VERSION);
+  usb_msc.setReadWriteCallback(msc_read_cb, msc_write_cb, msc_flush_cb);  // Set callback
+  usb_msc.setCapacity(flash.size() / 512, 512);     // Set disk size, block size should be 512 regardless of spi flash page size
+  usb_msc.begin();
 
   xTaskCreate(update, "task_utils", 1024, this, 1, NULL);
   return status;

@@ -37,6 +37,7 @@ import time
 import glob
 import shutil
 import subprocess
+from packet_installer import installPackages
 from uf2_loader import UF2Loader
 from dfu_reboot import DFU_Reboot
 
@@ -58,6 +59,7 @@ env.Replace(
 # Python callback
 def on_upload(source, target, env):
     print("\n************************** Custom Upload Script ********************************")
+    installPackages()
     arguments = env.GetProjectOption("upload_flags")
     firmware_path = str(source[0])
     loader = UF2Loader()

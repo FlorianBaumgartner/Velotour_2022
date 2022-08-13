@@ -39,8 +39,9 @@
 #include "mesh.h"
 
 #define TASK_OFFICE_FREQ          10            // [Hz]
-#define PRINT_INTERVAL            100           // [ms]
+#define PRINT_INTERVAL            0             // [ms]
 #define SUCCESS_STATE_TIMEOUT     90            // [s]
+#define NO_MAILBOX_TIMEOUT        5*60          // [s]
 #define SHOW_OWN_NODE_STATUS      true
 
 class Office
@@ -59,6 +60,8 @@ class Office
     Hmi::NodeStatus mailboxStatus[MAX_NODES_NUM];
     uint32_t mailboxCompareCode[MAX_NODES_NUM];
     uint32_t returnPayload = 0x00000000;
+    uint8_t currentNumCorrect = 0;
+    uint8_t minCountCorrectNodes = 0;
     
     static void update(void* pvParameter);
     void printInfo(bool forceUpdate = false);

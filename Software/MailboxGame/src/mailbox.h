@@ -42,7 +42,7 @@
 
 #define TASK_MAILBOX_FREQ         10            // [Hz]
 #define WIN_STATE_TIMEOUT         120           // [s]
-#define NO_CARD_TIMEOUT           20            // [s]
+#define NO_CARD_TIMEOUT           10            // [s]
 
 class Mailbox
 {

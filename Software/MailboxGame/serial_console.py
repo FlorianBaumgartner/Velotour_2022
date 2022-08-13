@@ -33,23 +33,8 @@
 import sys
 import time
 import threading
-try:
-    import serial
-    import serial.tools.list_ports
-except ModuleNotFoundError:
-    print("USB Modules not found, try to install them...")
-    import pip
-    def install(package):
-        if hasattr(pip, 'main'):
-            pip.main(['install', package])
-        else:
-            pip._internal.main(['install', package])
-
-    install("serial")
-    install("pyserial")
-    import serial
-    import serial.tools.list_ports
-    print("USB Modules successfully installed and imported!")
+import serial
+import serial.tools.list_ports
 
 
 class Port:

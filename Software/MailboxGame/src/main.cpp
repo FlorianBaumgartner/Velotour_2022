@@ -61,7 +61,7 @@
 
 Mesh mesh;
 Hmi hmi(SYS_LED, SYS_BZR);
-System sys(PWR_OFF, PWR_BTN, BAT_MSR);
+System sys(PWR_OFF, PWR_BTN, BAT_MSR, EXT_A, EXT_B, EXT_C, EXT_D);
 Office office(sys, hmi, mesh);
 Mailbox mailbox(NFC_RST, NFC_IRQ, NFC_SCL, NFC_SDA, sys, hmi, mesh);
 static bool error = false;
@@ -70,9 +70,10 @@ void powerDown(void);
 
 void setup()
 {
+  sys.startWatchdog(WATCHDOG_TIMEOUT);
   pinMode(USER_BTN, INPUT_PULLUP);
   console.begin();
-  sys.begin(WATCHDOG_TIMEOUT);
+  sys.begin();
   hmi.begin();
   hmi.setMode(Hmi::LED_MODE_POWER_ON);
   hmi.playSound(Hmi::BUZZER_POWER_ON);
@@ -135,7 +136,10 @@ void loop()
   }
   lowBat = soc < LOW_BATTERY_SOC;
 
-  sys.feedWatchdog();
+  if(!error)
+  {
+    sys.feedWatchdog();
+  }
   delay(50);
 }
 
