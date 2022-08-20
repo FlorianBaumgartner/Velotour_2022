@@ -136,7 +136,7 @@ void loop()
   }
   lowBat = soc < LOW_BATTERY_SOC;
 
-  if(!error)
+  if(!error || utils.isConnected())
   {
     sys.feedWatchdog();
   }
