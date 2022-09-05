@@ -35,6 +35,7 @@
 
 #include <Arduino.h>
 
+#define BATTERY_DISCHARGE_VOLTAGE 3.78          // [V]
 #define MEASUREMENT_AVR_NUM       10            // [#]
 #define MEASUREMENT_FACTOR        1567.7761     // [#]
 
@@ -48,8 +49,12 @@ class System
     void startWatchdog(uint32_t seconds);
     void feedWatchdog(void);
     void powerDown(bool feedDog = false);
+    void startBatteryDischarge(void);
     bool getButtonState(void);
-    uint8_t getBatteryPercentage(void);
+    float getBatteryVoltage(void);
+    bool getBatteryDischargeState(void);
+    uint8_t getBatteryDischargeProgress(void);
+    uint8_t getBatteryPercentage(float v = -1.0);
     uint8_t getExtSwitchState(void);
 
   private:
@@ -62,6 +67,8 @@ class System
     const int pinExtD;
 
     bool watchdogStarted = false;
+    bool batteryDischargeState = false;
+    uint8_t batteryDischargeProgress = 0;
 
     const float batteryVoltagePercentage [101] =
     {

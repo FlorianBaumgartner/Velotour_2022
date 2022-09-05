@@ -83,18 +83,20 @@ void System::powerDown(bool feedDog)
   }
 }
 
+void System::startBatteryDischarge(void)
+{
+  console.log.println("[SYSTEM] Started battery discharge mode");
+  batteryDischargeState = true;
+}
+
 bool System::getButtonState(void)
 {
   if(pinPowerButton == -1) return false;
   return !digitalRead(pinPowerButton);
 }
 
-uint8_t System::getBatteryPercentage(void)
+float System::getBatteryVoltage(void)
 {
-  #ifdef DISABLE_BATTERY_MEASUREMENT
-    return 100;
-  #endif
-
   float voltage = 0.0;
   for(int i = 0; i < MEASUREMENT_AVR_NUM; i++)
   {
@@ -102,7 +104,37 @@ uint8_t System::getBatteryPercentage(void)
   }
   voltage /= (float)MEASUREMENT_AVR_NUM;
   voltage /= (float)MEASUREMENT_FACTOR;
+  return voltage;
+}
 
+bool System::getBatteryDischargeState(void)
+{
+  return batteryDischargeState;
+}
+
+uint8_t System::getBatteryDischargeProgress(void)
+{
+  if(!batteryDischargeState) return 0;
+  int maxPercentage = 100 - getBatteryPercentage(BATTERY_DISCHARGE_VOLTAGE);
+  batteryDischargeProgress = constrain(((100 - getBatteryPercentage()) * 100) / maxPercentage, 0, 100);
+  if(getBatteryVoltage() < BATTERY_DISCHARGE_VOLTAGE)
+  {
+    batteryDischargeProgress = 100;
+  }
+  return batteryDischargeProgress;
+}
+
+uint8_t System::getBatteryPercentage(float v)
+{
+  #ifdef DISABLE_BATTERY_MEASUREMENT
+    return 100;
+  #endif
+
+  float voltage = getBatteryVoltage();
+  if(v >= 0.0)
+  {
+    voltage = v;
+  }
   static bool printedWarning = false;
   if(voltage < 0.2)
   {

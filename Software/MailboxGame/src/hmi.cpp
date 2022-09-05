@@ -116,6 +116,10 @@ void Hmi::playSound(BuzzerSound sound)
       melody = TONE_ERROR;
       melodyLength = sizeof(TONE_ERROR) / sizeof(Tone);
       break;
+    case BUZZER_DISCHARGING:
+      melody = TONE_DISCHARGING;
+      melodyLength = sizeof(TONE_DISCHARGING) / sizeof(Tone);
+      break;
     default:
       melody = nullptr;
       melodyLength = 0;
@@ -124,6 +128,19 @@ void Hmi::playSound(BuzzerSound sound)
   playing = true;
 }
 
+void Hmi::setBatteryDischargeMode(int percentage)
+{
+  if(batteryDischargePercentage >= 0.0)
+  {
+    setMode(LED_MODE_BATTERY_DISCHARGE);
+    setStatusIndicator(LED_STATUS_DISCHARGE_BATTERY);
+  }
+  else
+  {
+    batteryDischargePercentage = -1.0;
+  }
+  batteryDischargePercentage = max(batteryDischargePercentage, percentage);
+}
 
 void Hmi::update(void* pvParameter)
 {
@@ -151,6 +168,9 @@ void Hmi::update(void* pvParameter)
         break;
       case LED_STATUS_LOW_BATTERY:
         ref->led.setPixelColor(0, ref->led.Color(blinking, blinking, 0));   // Yellow blinking
+        break;
+      case LED_STATUS_DISCHARGE_BATTERY:
+        ref->led.setPixelColor(0, ref->led.Color(0, 0, blinking));   // Blue blinking
         break;
       case LED_STATUS_OFF:
       default:
@@ -234,6 +254,9 @@ void Hmi::update(void* pvParameter)
           {
             ref->led.setPixelColor(l, ref->led.Color(255, 255, 0));   // Yellow steady
           }
+          break;
+        case LED_MODE_BATTERY_DISCHARGE:
+          ref->led.setPixelColor(l, (i * 10 + 5) > (100 - ref->batteryDischargePercentage)? ref->led.Color(0, 0, 255) : ref->led.Color(255, 0, 0));
           break;
         case LED_MODE_NONE:
           ref->animationRunning = false;

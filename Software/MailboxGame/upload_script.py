@@ -32,6 +32,7 @@
 
 Import("env")
 
+import os
 import ast
 import time
 import glob
@@ -96,7 +97,8 @@ def on_upload(source, target, env):
         command = ["python", "serial_terminal.py"]
         command += [str(use_tabs_console), str(compare_vid_pid_console), str(compare_Serial), str(usb_vid), str(usb_pid), str(usb_serial)]
         CREATE_NO_WINDOW = 0x08000000
-        subprocess.Popen(command, close_fds=True, creationflags=CREATE_NO_WINDOW, shell = True)
+        process = subprocess.Popen(command, close_fds=True, creationflags=CREATE_NO_WINDOW, shell = True)
+        # process = os.popen(" ".join(command))
         
     firmwareFilePath = firmware_path.rsplit('.', 1)[0] + ".UF2"
     loader.save(firmware_path, firmwareFilePath)

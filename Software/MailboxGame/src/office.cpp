@@ -84,6 +84,12 @@ void Office::update(void* pvParameter)
   {
     TickType_t task_last_tick = xTaskGetTickCount();
 
+    if(ref->sys.getBatteryDischargeState())
+    {
+      vTaskDelayUntil(&task_last_tick, (const TickType_t) 1000 / TASK_OFFICE_FREQ);
+      continue;
+    }
+
     uint8_t numOnline = 0;
     uint8_t numCorrect = 0;
     ref->returnPayload = 0x00000000;                // Divided into 2-Bit node status segments: 00 = ignored node, 01 = disconnected, 10 = wrong code, 11 = correct code

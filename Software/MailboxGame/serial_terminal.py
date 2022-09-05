@@ -34,6 +34,28 @@
 # https://github.com/microsoft/terminal/issues/5125
 
 
+# try:
+#     from tendo.singleton import SingleInstance, SingleInstanceException
+# except ModuleNotFoundError:
+#     print("Singleton Module not found, try to install it...")
+#     import pip
+#     def install(package):
+#         if hasattr(pip, 'main'):
+#             pip.main(['install', package])
+#         else:
+#             pip._internal.main(['install', package])
+
+#     install("tendo")
+#     try:
+#         from tendo.singleton import SingleInstance, SingleInstanceException
+#         print("Singleton Module successfully installed and imported!")
+#     except ModuleNotFoundError:
+#         print("Please restart upload script...")
+
+
+from packet_installer import installPackages
+installPackages()
+
 import ast
 import sys
 import threading

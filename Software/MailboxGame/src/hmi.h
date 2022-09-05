@@ -47,11 +47,11 @@
 class Hmi
 {
   public:
-    enum LedStatus {LED_STATUS_OFF, LED_STATUS_BUSY, LED_STATUS_OK, LED_STATUS_ERROR, LED_STATUS_LOW_BATTERY};
+    enum LedStatus {LED_STATUS_OFF, LED_STATUS_BUSY, LED_STATUS_OK, LED_STATUS_ERROR, LED_STATUS_LOW_BATTERY, LED_STATUS_DISCHARGE_BATTERY};
     enum LedResult {LED_RESULT_NONE, LED_RESULT_A, LED_RESULT_B, LED_RESULT_C};
-    enum LedMode {LED_MODE_NONE, LED_MODE_POWER_ON, LED_MODE_POWER_OFF, LED_MODE_SUCCESS, LED_MODE_CARD_INSERTED, LED_MODE_NODE_STATUS};
+    enum LedMode {LED_MODE_NONE, LED_MODE_POWER_ON, LED_MODE_POWER_OFF, LED_MODE_SUCCESS, LED_MODE_CARD_INSERTED, LED_MODE_NODE_STATUS, LED_MODE_BATTERY_DISCHARGE};
     enum NodeStatus {NODE_IGNORED, NODE_DISCONNECTED, NODE_CONNECTED, NODE_ACTIVE};   // Active means, node is connected and card has been inserted
-    enum BuzzerSound {BUZZER_NONE, BUZZER_CARD_INSERTED, BUZZER_CARD_REMOVED, BUZZER_POWER_ON, BUZZER_POWER_OFF, BUZZER_SUCCESS, BUZZER_ERROR};
+    enum BuzzerSound {BUZZER_NONE, BUZZER_CARD_INSERTED, BUZZER_CARD_REMOVED, BUZZER_POWER_ON, BUZZER_POWER_OFF, BUZZER_SUCCESS, BUZZER_ERROR, BUZZER_DISCHARGING};
    
 
     Hmi(int pinLed, int pinBuzzer): pinLed(pinLed), pinBuzzer(pinBuzzer) {}
@@ -64,6 +64,7 @@ class Hmi
     void setNodeStatus(int node, NodeStatus status);
     void playSound(BuzzerSound sound);
     bool isPlaying(void) {return playing;}
+    void setBatteryDischargeMode(int percentage = -1); 
 
 
   private:
@@ -83,6 +84,7 @@ class Hmi
     uint32_t animationTimer = -1;
     bool animationRunning = false;
     bool initialized = false;
+    int batteryDischargePercentage = -1;
 
     const Tone* melody = nullptr;
     int melodyLength = 0;
@@ -92,6 +94,7 @@ class Hmi
     const Tone TONE_POWER_OFF[4] = {{1175, 120}, {0, 25}, {784, 120}, {0, 200}};
     const Tone TONE_CARD_INSERTED[4] = {{1175, 120}, {0, 25}, {1175, 120}, {0, 200}};
     const Tone TONE_CARD_REMOVED[2] = {{784, 200}, {0, 200}};
+    const Tone TONE_DISCHARGING[4] = {{1175, 350}, {0, 200}, {1175, 350}, {0, 200}};
     const Tone TONE_SUCCESS[4] = {{784, 150}, {988, 150}, {1175, 150}, {1568, 150}};
     const Tone TONE_ERROR[16] = {{988, 200}, {0, 200}, {988, 200}, {0, 200}, {988, 200}, {0, 200}, {988, 200}, {0, 200},
                                  {988, 200}, {0, 200}, {988, 200}, {0, 200}, {988, 200}, {0, 200}, {988, 200}, {0, 200}};

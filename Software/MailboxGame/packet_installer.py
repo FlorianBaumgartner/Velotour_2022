@@ -32,20 +32,21 @@
 
 def installPackages():
     import sys
+    import pip
     import time
     import threading
+    
+    def install(package):
+        if hasattr(pip, 'main'):
+            pip.main(['install', package])
+        else:
+            pip._internal.main(['install', package])
+                
     try:
         import serial
         import serial.tools.list_ports
     except ModuleNotFoundError:
         print("USB Modules not found, try to install them...")
-        import pip
-        def install(package):
-            if hasattr(pip, 'main'):
-                pip.main(['install', package])
-            else:
-                pip._internal.main(['install', package])
-
         install("serial")
         install("pyserial")
         import serial
@@ -56,13 +57,6 @@ def installPackages():
         from tendo.singleton import SingleInstance, SingleInstanceException
     except ModuleNotFoundError:
         print("Singleton Module not found, try to install it...")
-        import pip
-        def install(package):
-            if hasattr(pip, 'main'):
-                pip.main(['install', package])
-            else:
-                pip._internal.main(['install', package])
-
         install("tendo")
         try:
             from tendo.singleton import SingleInstance, SingleInstanceException
@@ -71,17 +65,21 @@ def installPackages():
             print("Please restart upload script...")
             
     try:
+        import win32gui
+    except ModuleNotFoundError:
+        print("win32gui Module not found, try to install it...")
+        install("pywin32")
+        try:
+            import win32gui
+            print("win32gui Module successfully installed and imported!")
+        except ModuleNotFoundError:
+            print("Please restart upload script...")
+            
+    try:
         import usb.core
         import usb.backend.libusb1
     except ModuleNotFoundError:
         print("USB Modules not found, try to install them...")
-        import pip
-        def install(package):
-            if hasattr(pip, 'main'):
-                pip.main(['install', package])
-            else:
-                pip._internal.main(['install', package])
-
         install("libusb")
         install("pyusb")
         import usb.core
@@ -89,3 +87,6 @@ def installPackages():
         print("USB Modules successfully installed and imported!")
 
     print("All needed packages are installed")
+
+
+installPackages()

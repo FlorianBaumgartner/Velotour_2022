@@ -55,6 +55,7 @@
 #define SYS_LED           45
 #define SYS_BZR           44    // RDX-Pin
 
+#define LONG_PRESS_TIME   5     // [s]
 #define WATCHDOG_TIMEOUT  10    // [s]
 #define LOW_BATTERY_SOC   30    // [%]
 #define MIN_BATTERY_SOC   10    // [%]
@@ -111,13 +112,34 @@ void setup()
 
 void loop()
 {
-  static bool btn = true;
-  if(!digitalRead(USER_BTN) && btn)
+  static int btnTimer = millis();
+  static bool btn = false;
+  
+  if(btn && digitalRead(USER_BTN) && (millis() - btnTimer < LONG_PRESS_TIME * 1000))
   {
-    console.log.println("[MAIN] Boot button pressed -> Turn off system");
+    console.log.println("[MAIN] Boot button short press detected -> Turn off system");
     powerDown();
   }
-  btn = digitalRead(USER_BTN);
+  else if(!sys.getBatteryDischargeState() && (millis() - btnTimer > LONG_PRESS_TIME * 1000))
+  {
+    console.log.println("[MAIN] Boot button long press detected -> Battery discharge mode started");
+    sys.startBatteryDischarge();
+    hmi.playSound(Hmi::BUZZER_DISCHARGING);
+  }
+  btn = !digitalRead(USER_BTN);
+  if(!btn)
+  {
+    btnTimer = millis();
+  }
+  if(sys.getBatteryDischargeState())
+  {
+    hmi.setBatteryDischargeMode(sys.getBatteryDischargeProgress());
+  }
+  if(sys.getBatteryDischargeProgress() == 100)
+  {
+    console.ok.printf("[MAIN] Battery has been discharged to storage voltage: %.2f V, power down now...\n", sys.getBatteryVoltage());
+    powerDown();
+  }
 
   static bool lowBat = false;
   float soc = sys.getBatteryPercentage();
@@ -129,14 +151,14 @@ void loop()
       console.warning.printf("[MAIN] Battery state critical: %d%%\n", soc);
     }
   }
-  if(soc < MIN_BATTERY_SOC && !utils.isConnected())
+  if(soc < MIN_BATTERY_SOC && !utils.isConnected() && millis() > 10000)
   {
     console.error.printf("[MAIN] Low Battery! (%d%%)\n", soc);
     powerDown();
   }
   lowBat = soc < LOW_BATTERY_SOC;
 
-  if(!error || utils.isConnected())
+  if(!error || utils.isConnected() || sys.getBatteryDischargeState())
   {
     sys.feedWatchdog();
   }

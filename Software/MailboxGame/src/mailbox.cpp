@@ -65,6 +65,13 @@ void Mailbox::update(void* pvParameter)
   {
     TickType_t task_last_tick = xTaskGetTickCount();
 
+    if(ref->sys.getBatteryDischargeState())
+    {
+      
+      vTaskDelayUntil(&task_last_tick, (const TickType_t) 1000 / TASK_MAILBOX_FREQ);
+      continue;
+    }
+
     uint8_t nodeStatus = (ref->mesh.getNodePayload(0) >> (ref->mesh.getPersonalId() * 2)) & 0x03;  // 00 = ignored node, 01 = disconnected, 10 = wrong code, 11 = correct code
     bool allCorrect = (ref->mesh.getNodePayload(0) & 0x80000000) && ref->mesh.getNodeState(0) && ref->mesh.getNodePayload(0) != -1;
     uint32_t cardData = ref->nfcInitialized? ref->readCardData() : -1;
